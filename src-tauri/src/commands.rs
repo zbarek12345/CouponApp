@@ -154,6 +154,50 @@ pub async fn load_coupons(
     Ok(Page { items, total, offset, limit })
 }
 
+#[tauri::command]
+pub async fn generate_coupon_code_from_str(state: tauri::State<'_, AppState>,coupon_value: &str, coupon_type : &str)-> Result<String, String>{
+
+    let base64_image = codes_handler::codes_handler::render_code(rxing::BarcodeFormat::from(coupon_type), coupon_value.to_string())
+        .await
+        .map_err(|e| format!("Failed to generate barcode: {}", e))?;
+
+    return Ok(base64_image);
+}
+
+#[tauri::command]
+pub async fn generate_coupon_code(
+    state: tauri::State<'_, AppState>,
+    code_id: uuid::Uuid,
+) -> Result<String, String> {
+    
+    let code_str = code_id.to_string();
+    // 1. Fetch the code from database
+    let code_record = sqlx::query!(
+        r#"
+        SELECT c.code_id, c.code_type, c.code_value 
+        FROM codes c
+        WHERE c.code_id = ?
+        "#,
+        code_str   // since code_id is TEXT in DB
+    )
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|e| format!("Database error: {}", e))?;
+
+    let code_record = match code_record {
+        Some(r) => r,
+        None => return Err("Code not found".to_string()),
+    };
+
+    // 2. Convert string code_type to rxing::BarcodeFormat
+    let barcode_format = rxing::BarcodeFormat::from(code_record.code_type.as_str());
+    // 3. Generate Base64 image
+    let base64_image = codes_handler::codes_handler::render_code(barcode_format, code_record.code_value)
+        .await
+        .map_err(|e| format!("Failed to generate barcode: {}", e))?;
+
+    Ok(base64_image)
+}
 // ═══════════════════════════════════════════════════════════════
 // RECEIPT  –  two-phase: scan → preview → user edits → save
 // ═══════════════════════════════════════════════════════════════
@@ -395,6 +439,7 @@ async fn detect_codes(_image_base64: &str) -> Vec<CodeCandidate>{
 //     ]
 // }
 
+
 async fn simulate_ocr_llm_parsing(_image_base64: &str) -> ReceiptPayloadData {
     let draft_receipt_id = Uuid::new_v4().to_string();
 
@@ -443,6 +488,7 @@ pub async fn run() {
             scan_coupon_image,
             save_coupon,
             load_coupons,
+            generate_coupon_code_from_str,
             // Receipts
             scan_receipt_image,
             save_receipt,
