@@ -1,0 +1,7 @@
+[app.windows]
+label = "main"
+title = "Coupon App"
+width = 1024
+height = 768
+visible = true
+resizable = true

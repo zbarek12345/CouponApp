@@ -1,0 +1,29 @@
+{
+  "productName": "CouponApp",
+  "version": "0.1.0",
+  "identifier": "com.couponapp.desktop",
+  "build": {
+    "beforeDevCommand": "bun run dev",
+    "beforeBuildCommand": "bun run build",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "label": "main",
+        "url": "index.html",
+        "width": 1024,
+        "height": 768
+      }
+    ]
+  },
+  "bundle": {
+    "active": false
+  },
+  "plugins": {}
+}
