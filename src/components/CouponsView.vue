@@ -1,246 +1,163 @@
 <template>
-  <div>
-    <div class="card">
-      <h2>Scan Coupon</h2>
-      <div class="scan-section">
-        <textarea v-model="mockImageData" placeholder="Paste mock image data or base64..."></textarea>
-        <button @click="scanCoupon" :disabled="scanning">Scan Image</button>
+  <div class="coupons-view">
+    <!-- Header + Tab Nav -->
+    <div class="view-header">
+      <div class="view-title">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+          <line x1="7" y1="7" x2="7.01" y2="7"/>
+        </svg>
+        <h1>Coupons</h1>
       </div>
 
-      <div v-if="preview" class="preview">
-        <h3>Scan Results</h3>
-        <div class="candidates">
-          <div 
-            v-for="(candidate, idx) in preview.candidates" 
-            :key="idx"
-            class="candidate"
-            :class="{ selected: selectedCandidate === idx }"
-            @click="selectedCandidate = idx"
-          >
-            <strong>{{ candidate.code_type }}</strong>
-            <span>{{ candidate.code_value }}</span>
-            <small>Confidence: {{ (candidate.confidence * 100).toFixed(1) }}%</small>
-          </div>
-        </div>
-        
-        <div class="form-group">
-          <input v-model="description" placeholder="Description" />
-          <select v-model="selectedShopId">
-            <option value="">Select Shop</option>
-            <option v-for="shop in shops" :key="shop.shop_id" :value="shop.shop_id">
-              {{ shop.shop_name }}
-            </option>
-          </select>
-          <button @click="saveCoupon" :disabled="saving">Save Coupon</button>
-        </div>
-      </div>
+      <nav class="tab-nav">
+        <button
+          class="tab-btn"
+          :class="{ active: activeTab === 'browse' }"
+          @click="activeTab = 'browse'"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          Browse
+        </button>
+        <button
+          class="tab-btn"
+          :class="{ active: activeTab === 'add' }"
+          @click="activeTab = 'add'"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="16"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+          Add Coupon
+        </button>
+      </nav>
     </div>
 
-    <div class="card">
-      <h2>Coupons List</h2>
-      <div class="pagination">
-        <button @click="loadCoupons(0)" :disabled="loading">Refresh</button>
-        <span>Page: {{ Math.floor(offset / limit) + 1 }}</span>
-        <button @click="loadCoupons(offset - limit)" :disabled="offset === 0">Previous</button>
-        <button @click="loadCoupons(offset + limit)" :disabled="!hasMore">Next</button>
-      </div>
-      
-      <div v-if="loading" class="loading">Loading...</div>
-      <div v-else-if="error" class="error">{{ error }}</div>
-      <div v-else>
-        <div v-for="coupon in coupons" :key="coupon.coupon_id" class="coupon-item">
-          <div class="coupon-header">
-            <strong>{{ coupon.shop_name }}</strong>
-            <span class="badge">{{ coupon.code_type }}</span>
-          </div>
-          <div class="coupon-body">
-            <span class="code">{{ coupon.code_value }}</span>
-            <span class="description">{{ coupon.description || 'No description' }}</span>
-          </div>
-        </div>
-      </div>
+    <!-- Tab panels -->
+    <div class="view-body">
+      <transition name="tab-slide" mode="out-in">
+        <CouponsBrowseView
+          v-if="activeTab === 'browse'"
+          key="browse"
+          :refresh-key="refreshKey"
+        />
+        <CouponsAddView
+          v-else
+          key="add"
+          @saved="onCouponSaved"
+        />
+      </transition>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
+import { ref } from 'vue'
+import CouponsBrowseView from './CouponsView/CouponsBrowseView.vue'
+import CouponsAddView from './CouponsView/CouponsAddView.vue'
 
-const shops = ref([])
-const coupons = ref([])
-const loading = ref(false)
-const error = ref(null)
-const offset = ref(0)
-const limit = ref(10)
-const hasMore = ref(false)
+const activeTab = ref('browse')
+const refreshKey = ref(0)
 
-// Scan state
-const mockImageData = ref('')
-const scanning = ref(false)
-const saving = ref(false)
-const preview = ref(null)
-const selectedCandidate = ref(0)
-const description = ref('')
-const selectedShopId = ref('')
-
-const loadShops = async () => {
-  try {
-    shops.value = await invoke('load_shops')
-  } catch (err) {
-    console.error(err)
-  }
+const onCouponSaved = () => {
+  // Increment triggers a watch in BrowseView → re-fetches from page 1
+  refreshKey.value++
+  // Switch to browse so the user can see the saved coupon immediately
+  activeTab.value = 'browse'
 }
-
-const loadCoupons = async (newOffset = 0) => {
-  loading.value = true
-  error.value = null
-  try {
-    const result = await invoke('load_coupons', { offset: newOffset, limit: limit.value })
-    coupons.value = result.items
-    offset.value = result.offset
-    hasMore.value = result.items.length === limit.value
-  } catch (err) {
-    error.value = err
-    console.error(err)
-  } finally {
-    loading.value = false
-  }
-}
-
-const scanCoupon = async () => {
-  scanning.value = true
-  error.value = null
-  try {
-    const result = await invoke('scan_coupon_image', {
-      request: { image_base64: mockImageData.value || 'mock-image-data' }
-    })
-    preview.value = result
-    selectedCandidate.value = result.best_index
-    await loadShops()
-  } catch (err) {
-    error.value = err
-    console.error(err)
-  } finally {
-    scanning.value = false
-  }
-}
-
-const saveCoupon = async () => {
-  if (!selectedShopId.value) {
-    error.value = 'Please select a shop'
-    return
-  }
-  
-  saving.value = true
-  error.value = null
-  try {
-    await invoke('save_coupon', {
-      request: {
-        candidates: preview.value.candidates,
-        selected_candidate_index: selectedCandidate.value,
-        description: description.value,
-        shop_id: selectedShopId.value
-      }
-    })
-    await loadCoupons(0)
-    // Reset form
-    preview.value = null
-    description.value = ''
-    selectedShopId.value = ''
-    mockImageData.value = ''
-  } catch (err) {
-    error.value = err
-    console.error(err)
-  } finally {
-    saving.value = false
-  }
-}
-
-loadCoupons(0)
 </script>
 
 <style scoped>
-.scan-section {
+.coupons-view {
   display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100%;
+}
+
+/* ── Header ── */
+.view-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+}
+
+.view-title {
+  display: flex;
+  align-items: center;
   gap: 10px;
-  margin-bottom: 20px;
+  color: var(--accent, #6366f1);
 }
 
-.scan-section textarea {
-  flex: 1;
-  min-height: 100px;
+.view-title h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text, #111827);
+  letter-spacing: -0.02em;
 }
 
-.preview {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
+/* ── Tabs ── */
+.tab-nav {
+  display: flex;
+  gap: 4px;
+  padding-bottom: 0;
 }
 
-.candidates {
-  margin: 15px 0;
-}
-
-.candidate {
-  padding: 10px;
-  margin-bottom: 8px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
   cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted, #9ca3af);
+  border-radius: 6px 6px 0 0;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  margin-bottom: -1px; /* sit on the border */
 }
 
-.candidate:hover {
-  background: #f5f5f5;
+.tab-btn:hover {
+  color: var(--text-secondary, #374151);
+  background: var(--bg, #f9fafb);
 }
 
-.candidate.selected {
-  background: #e8eaf6;
-  border-color: #667eea;
+.tab-btn.active {
+  color: var(--accent, #6366f1);
+  border-bottom-color: var(--accent, #6366f1);
+  background: var(--bg, #f9fafb);
 }
 
-.coupon-item {
-  padding: 12px;
-  margin-bottom: 10px;
-  border: 1px solid #eee;
-  border-radius: 8px;
+/* ── Body ── */
+.view-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
 }
 
-.coupon-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
+/* ── Transition ── */
+.tab-slide-enter-active,
+.tab-slide-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
-.badge {
-  background: #667eea;
-  color: white;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
+.tab-slide-enter-from {
+  opacity: 0;
+  transform: translateX(10px);
 }
 
-.code {
-  font-family: monospace;
-  background: #f5f5f5;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.description {
-  margin-left: 10px;
-  color: #666;
-}
-
-.pagination {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 20px;
+.tab-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-10px);
 }
 </style>

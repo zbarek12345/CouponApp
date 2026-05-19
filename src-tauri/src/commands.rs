@@ -1,6 +1,8 @@
 use crate::models::*;
 use sqlx::SqlitePool;
 use uuid::Uuid;
+#[path = "codes_handler.rs"]
+mod codes_handler;
 
 // ═══════════════════════════════════════════════════════════════
 // SHOP
@@ -55,7 +57,7 @@ pub async fn scan_coupon_image(
     request: ScanImageRequest,
 ) -> Result<CouponScanPreview, String> {
     // 🔍 Replace `simulate_rxing_detection` with real rxing / bardecoder call.
-    let candidates = simulate_rxing_detection(&request.image_base64);
+    let candidates = detect_codes(&request.image_base64).await;
 
     // Pre-select the candidate with the highest confidence.
     let best_index = candidates
@@ -372,22 +374,26 @@ async fn find_matching_shops(pool: &SqlitePool, raw_name: &str) -> Result<Vec<Sh
 // Replace these with real rxing / OCR+LLM implementations.
 // ═══════════════════════════════════════════════════════════════
 
-fn simulate_rxing_detection(_image_base64: &str) -> Vec<CodeCandidate> {
-    vec![
-        CodeCandidate {
-            index: 0,
-            code_value: "SUMMER-CAFFEINE-2026".to_string(),
-            code_type: "QR_CODE".to_string(),
-            confidence: 0.97,
-        },
-        CodeCandidate {
-            index: 1,
-            code_value: "8712345678906".to_string(),
-            code_type: "EAN-13".to_string(),
-            confidence: 0.61,
-        },
-    ]
+async fn detect_codes(_image_base64: &str) -> Vec<CodeCandidate>{
+    return codes_handler::codes_handler::read_image_code(_image_base64.to_string()).await.unwrap();
 }
+
+// fn simulate_rxing_detection(_image_base64: &str) -> Vec<CodeCandidate> {
+//     vec![
+//         CodeCandidate {
+//             index: 0,
+//             code_value: "SUMMER-CAFFEINE-2026".to_string(),
+//             code_type: "QR_CODE".to_string(),
+//             confidence: 0.97,
+//         },
+//         CodeCandidate {
+//             index: 1,
+//             code_value: "8712345678906".to_string(),
+//             code_type: "EAN-13".to_string(),
+//             confidence: 0.61,
+//         },
+//     ]
+// }
 
 async fn simulate_ocr_llm_parsing(_image_base64: &str) -> ReceiptPayloadData {
     let draft_receipt_id = Uuid::new_v4().to_string();

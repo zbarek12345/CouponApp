@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
-
+use rxing::Point;
 // ─────────────────────────────────────────────
 // Persisted DB models (returned after a save)
 // ─────────────────────────────────────────────
@@ -61,6 +61,7 @@ pub struct CodeCandidate {
     pub code_type: String,
     /// Confidence in [0.0, 1.0] – real detector should fill this in
     pub confidence: f64,
+    pub bounds: Vec<Point>
 }
 
 /// Everything the frontend needs to show a "confirm your coupon" screen.
