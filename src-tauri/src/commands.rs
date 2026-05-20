@@ -1,6 +1,7 @@
 use crate::models::*;
 use sqlx::SqlitePool;
 use uuid::Uuid;
+use base64::Engine;
 use tauri::Manager;
 use dirs::data_dir;
 #[path = "codes_handler.rs"]
@@ -59,7 +60,11 @@ pub async fn create_shop(
 
 /// Return all shops (simple list, no pagination needed – shops are few).
 #[tauri::command]
-pub async fn load_shops(state: tauri::State<'_, AppState>, app: tauri::AppHandle) -> Result<Vec<ShopReqResult>, String> {
+pub async fn load_shops(
+    state: tauri::State<'_, AppState>,
+    app: tauri::AppHandle,
+) -> Result<Vec<ShopReqResult>, String> {
+
     let rows = sqlx::query_as!(
         Shop,
         "SELECT shop_id, shop_name, shop_logo FROM shops ORDER BY shop_name"
@@ -68,40 +73,51 @@ pub async fn load_shops(state: tauri::State<'_, AppState>, app: tauri::AppHandle
     .await
     .map_err(|e| e.to_string())?;
 
-    let mut ret : Vec<ShopReqResult> = Vec::new();
-
     let base_path = app
         .path()
         .app_data_dir()
         .map_err(|e| e.to_string())?
         .join("logos");
 
-    for row in rows{
+    let mut ret = Vec::with_capacity(rows.len());
 
-        if row.shop_logo.is_some(){
-            let image_path = base_path.clone().join(row.shop_logo.unwrap());
-            println!("{:?}",image_path);
-            let logo_base64 = codes_handler::codes_handler::image_to_base64(image::open(image_path).unwrap()).await.unwrap();
-            println!("{:?}",logo_base64);
-            ret.push(ShopReqResult{
-                shop_id : row.shop_id,
-                shop_name : row.shop_name,
-                logo_base64 : Some(logo_base64)
-            })
-            
-        }
-        else{
-            ret.push(ShopReqResult{
-                shop_id : row.shop_id,
-                shop_name : row.shop_name,
-                logo_base64 : None
-            })
-        }
+    for row in rows {
+        let logo_base64 = match &row.shop_logo {
+            Some(logo_name) => {
+                // Assert PNG extension
+                assert!(
+                    logo_name.ends_with(".png"),
+                    "Non-PNG logo found: {}",
+                    logo_name
+                );
+
+                let image_path = base_path.join(logo_name);
+
+                // Read PNG bytes directly (fastest)
+                let image_bytes =
+                    std::fs::read(&image_path)
+                        .map_err(|e| {
+                            format!(
+                                "Failed to read logo '{}': {}",
+                                image_path.display(),
+                                e
+                            )
+                        })?;
+
+                Some(base64::engine::general_purpose::STANDARD.encode(image_bytes))
+            }
+            None => None,
+        };
+
+        ret.push(ShopReqResult {
+            shop_id: row.shop_id,
+            shop_name: row.shop_name,
+            logo_base64,
+        });
     }
 
     Ok(ret)
 }
-
 // ═══════════════════════════════════════════════════════════════
 // COUPON  –  two-phase: scan → preview → user edits → save
 // ═══════════════════════════════════════════════════════════════
