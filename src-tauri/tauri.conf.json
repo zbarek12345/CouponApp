@@ -23,7 +23,10 @@
     ]
   },
   "bundle": {
-    "active": false
+    "active": false,
+    "resources": [
+      "migrations"
+    ]
   },
   "plugins": {}
 }

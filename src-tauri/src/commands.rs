@@ -1,8 +1,8 @@
 use crate::models::*;
-use sqlx::SqlitePool;
+use sqlx::{Sqlite, SqlitePool, migrate::MigrateDatabase, sqlite::SqlitePoolOptions};
 use uuid::Uuid;
 use base64::Engine;
-use tauri::Manager;
+use tauri::{Manager,path::BaseDirectory};
 use dirs::data_dir;
 #[path = "codes_handler.rs"]
 mod codes_handler;
@@ -529,13 +529,57 @@ async fn simulate_ocr_llm_parsing(_image_base64: &str) -> ReceiptPayloadData {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub async fn run() {
-    let pool = sqlx::SqlitePool::connect("sqlite://./coupon_app.db").await.unwrap();
-    
-    //let mig = sqlx::migrate!("./migrations").run(&pool).await.unwrap();
-        
     tauri::Builder::default()
-    .plugin(tauri_plugin_opener::init())
-        .manage(AppState { pool })
+        .plugin(tauri_plugin_opener::init())
+        .setup(|app| {
+            let handle = app.handle().clone();
+
+            tauri::async_runtime::spawn(async move {
+                // Get app data dir
+                let app_data_dir = handle
+                    .path()
+                    .resolve("", BaseDirectory::AppData)
+                    .expect("Failed to resolve app data dir");
+
+                // Ensure folder exists
+                std::fs::create_dir_all(&app_data_dir)
+                    .expect("Failed to create app data dir");
+
+                // Database path
+                let db_path = app_data_dir.join("coupon_app.db");
+                
+                println!("{:?}", db_path);
+
+                // SQLite connection string
+                let db_url = format!(
+                    "sqlite://{}",
+                    db_path.to_string_lossy()
+                );
+                println!("{:?}", db_url);
+
+                if !Sqlite::database_exists(&db_url).await.expect("Failed to verify db existance") {
+                    sqlx::Sqlite::create_database(&db_url).await.expect("Db creation failed");
+                }
+
+                // Create DB automatically if missing
+                let pool = SqlitePoolOptions::new()
+                    .max_connections(5)
+                    .connect(&db_url)
+                    .await
+                    .expect("Failed to connect to database");
+
+                // Run migrations
+                sqlx::migrate!("./migrations")
+                    .run(&pool)
+                    .await
+                    .expect("Failed to run migrations");
+
+                // Store state
+                handle.manage(AppState { pool });
+            });
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             // Shops
             create_shop,
