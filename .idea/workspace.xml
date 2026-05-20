@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="CargoProjects">
+    <cargoProject FILE="$PROJECT_DIR$/src-tauri/Cargo.toml">
+      <package file="$PROJECT_DIR$/src-tauri">
+        <feature name="default" enabled="true" />
+      </package>
+    </cargoProject>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="831a601e-5436-4a5a-b8fa-380256903786" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/src-tauri/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/src-tauri/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src-tauri/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/src-tauri/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src-tauri/src/codes_handler.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-tauri/src/codes_handler.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src-tauri/src/commands.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-tauri/src/commands.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src-tauri/src/models.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src-tauri/src/models.rs" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="38" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="b8jGQ2Wq" />
+  </component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="4.700161301847497E-44" />
+      <entry key="MS500" value="3.6477777936047723E-9" />
+      <entry key="S2" value="0.01631587537685961" />
+      <entry key="S5" value="0.3698339001020078" />
+      <entry key="S10" value="1.1045556023442489" />
+      <entry key="S30" value="3.4935899984966863" />
+      <entry key="S60" value="5.808018199684273" />
+      <entry key="M2" value="8.241228835559754" />
+      <entry key="M5" value="22.296905455383737" />
+      <entry key="M10" value="51.50746186292668" />
+      <entry key="M15" value="71.57956618640918" />
+      <entry key="M30" value="101.20873707226193" />
+      <entry key="H1" value="120.96998981185044" />
+      <entry key="H2" value="132.39766208928418" />
+      <entry key="H4" value="138.54468752359924" />
+      <entry key="D1" value="143.90205554734337" />
+      <entry key="W1" value="144.84260188436477" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="1.0" />
+      <entry key="MS500" value="1.0000000000018963" />
+      <entry key="S2" value="1.0011765551818796" />
+      <entry key="S5" value="1.0753720536834142" />
+      <entry key="S10" value="1.3822781318272603" />
+      <entry key="S30" value="2.4204139507440505" />
+      <entry key="S60" value="3.048396845733019" />
+      <entry key="M2" value="3.474234905304441" />
+      <entry key="M5" value="3.7762131813195676" />
+      <entry key="M10" value="3.8857221541131817" />
+      <entry key="M15" value="3.9232741728984837" />
+      <entry key="M30" value="3.9613640548687976" />
+      <entry key="H1" value="3.9806132519938355" />
+      <entry key="H2" value="3.9902893669980735" />
+      <entry key="H4" value="3.995140360578975" />
+      <entry key="D1" value="3.9991894589961543" />
+      <entry key="W1" value="3.9998841936981284" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="3.446340466576647E-13" />
+      <entry key="MS500" value="0.003217155628450841" />
+      <entry key="S2" value="0.25463826736992773" />
+      <entry key="S5" value="0.9939349315316484" />
+      <entry key="S10" value="2.2040267386336487" />
+      <entry key="S30" value="5.7682745024410815" />
+      <entry key="S60" value="8.761386754848843" />
+      <entry key="M2" value="11.658484253707295" />
+      <entry key="M5" value="26.04699067393765" />
+      <entry key="M10" value="55.37923579887251" />
+      <entry key="M15" value="75.49327066188789" />
+      <entry key="M30" value="105.16514803517107" />
+      <entry key="H1" value="124.94807611340364" />
+      <entry key="H2" value="136.38667408777118" />
+      <entry key="H4" value="142.53918554646518" />
+      <entry key="D1" value="147.90113742638945" />
+      <entry key="W1" value="148.84247069645554" />
+    </decayedShown>
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 7,
+  "fromUser": false
+}]]></component>
+  <component name="ProjectId" id="3DzzM23t1Sv3XJwUKm54HR6LkTt" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.rust.reset.selective.auto.import": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "Shell Script.Run tauri.executor": "Run",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "C:/Users/Developer/source/repos/CouponApp",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "bun",
+    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
+    "org.rust.first.attach.projects": "true",
+    "settings.editor.selected.configurable": "language.rust",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RunManager">
+    <configuration name="Run tauri" type="ShConfigurationType">
+      <option name="SCRIPT_TEXT" value="bun tauri dev" />
+      <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
+      <option name="SCRIPT_PATH" value="" />
+      <option name="SCRIPT_OPTIONS" value="" />
+      <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
+      <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
+      <option name="INTERPRETER_PATH" value="powershell.exe" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="EXECUTE_IN_TERMINAL" value="true" />
+      <option name="EXECUTE_SCRIPT_FILE" value="false" />
+      <envs />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="RustProjectSettings">
+    <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="831a601e-5436-4a5a-b8fa-380256903786" name="Changes" comment="" />
+      <created>1779299637194</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1779299637194</updated>
+      <workItem from="1779299638514" duration="2397000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>

@@ -16,7 +16,7 @@ use base64::Engine; // <-- required to bring .decode() into scope
     use crate::models::CodeCandidate;
 
     /// Decodes a base64-encoded image string into an in-memory image buffer
-    async fn base64_to_image(
+    pub async fn base64_to_image(
         image_str: String,
     ) -> Result<DynamicImage, Box<dyn std::error::Error + Send + Sync>> {
         let image_bytes = base64::engine::general_purpose::STANDARD
@@ -28,6 +28,20 @@ use base64::Engine; // <-- required to bring .decode() into scope
 
         Ok(img)
     }
+
+    pub async fn image_to_base64(
+    image: DynamicImage,
+        ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+
+            let mut bytes: Vec<u8> = Vec::new();
+
+            image.write_to(
+                &mut Cursor::new(&mut bytes),
+                ImageFormat::Png,
+            )?;
+
+            Ok(base64::engine::general_purpose::STANDARD.encode(bytes))
+        }
 
     pub async fn read_image_code(
         image_str: String,

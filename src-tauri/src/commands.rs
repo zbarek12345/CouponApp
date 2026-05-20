@@ -1,6 +1,8 @@
 use crate::models::*;
 use sqlx::SqlitePool;
 use uuid::Uuid;
+use tauri::Manager;
+use dirs::data_dir;
 #[path = "codes_handler.rs"]
 mod codes_handler;
 
@@ -12,13 +14,38 @@ mod codes_handler;
 #[tauri::command]
 pub async fn create_shop(
     state: tauri::State<'_, AppState>,
+    app: tauri::AppHandle,
     request: CreateShopRequest,
 ) -> Result<Shop, String> {
+
     let shop_id = Uuid::new_v4().to_string();
+
+    let base_path = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("logos");
+
+    // Ensure directory exists
+    std::fs::create_dir_all(&base_path)
+        .map_err(|e| e.to_string())?;
+
+    let image_name = format!("{shop_id}.png");
+    let image_path = base_path.join(&image_name);
+
+    println!("{:?}",image_path);
+
+    // Decode and save image
+    codes_handler::codes_handler::base64_to_image(request.logo)
+        .await
+        .map_err(|e| e.to_string())?
+        .save(&image_path)
+        .map_err(|e| e.to_string())?;
+            
     sqlx::query("INSERT INTO shops (shop_id, shop_name, shop_logo) VALUES (?, ?, ?)")
         .bind(&shop_id)
         .bind(&request.name)
-        .bind(&request.logo)
+        .bind(&image_name)
         .execute(&state.pool)
         .await
         .map_err(|e| e.to_string())?;
@@ -26,13 +53,13 @@ pub async fn create_shop(
     Ok(Shop {
         shop_id,
         shop_name: request.name,
-        shop_logo: request.logo,
+        shop_logo: Some(image_name),
     })
 }
 
 /// Return all shops (simple list, no pagination needed – shops are few).
 #[tauri::command]
-pub async fn load_shops(state: tauri::State<'_, AppState>) -> Result<Vec<Shop>, String> {
+pub async fn load_shops(state: tauri::State<'_, AppState>, app: tauri::AppHandle) -> Result<Vec<ShopReqResult>, String> {
     let rows = sqlx::query_as!(
         Shop,
         "SELECT shop_id, shop_name, shop_logo FROM shops ORDER BY shop_name"
@@ -41,7 +68,38 @@ pub async fn load_shops(state: tauri::State<'_, AppState>) -> Result<Vec<Shop>, 
     .await
     .map_err(|e| e.to_string())?;
 
-    Ok(rows)
+    let mut ret : Vec<ShopReqResult> = Vec::new();
+
+    let base_path = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("logos");
+
+    for row in rows{
+
+        if row.shop_logo.is_some(){
+            let image_path = base_path.clone().join(row.shop_logo.unwrap());
+            println!("{:?}",image_path);
+            let logo_base64 = codes_handler::codes_handler::image_to_base64(image::open(image_path).unwrap()).await.unwrap();
+            println!("{:?}",logo_base64);
+            ret.push(ShopReqResult{
+                shop_id : row.shop_id,
+                shop_name : row.shop_name,
+                logo_base64 : Some(logo_base64)
+            })
+            
+        }
+        else{
+            ret.push(ShopReqResult{
+                shop_id : row.shop_id,
+                shop_name : row.shop_name,
+                logo_base64 : None
+            })
+        }
+    }
+
+    Ok(ret)
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -421,24 +479,6 @@ async fn find_matching_shops(pool: &SqlitePool, raw_name: &str) -> Result<Vec<Sh
 async fn detect_codes(_image_base64: &str) -> Vec<CodeCandidate>{
     return codes_handler::codes_handler::read_image_code(_image_base64.to_string()).await.unwrap();
 }
-
-// fn simulate_rxing_detection(_image_base64: &str) -> Vec<CodeCandidate> {
-//     vec![
-//         CodeCandidate {
-//             index: 0,
-//             code_value: "SUMMER-CAFFEINE-2026".to_string(),
-//             code_type: "QR_CODE".to_string(),
-//             confidence: 0.97,
-//         },
-//         CodeCandidate {
-//             index: 1,
-//             code_value: "8712345678906".to_string(),
-//             code_type: "EAN-13".to_string(),
-//             confidence: 0.61,
-//         },
-//     ]
-// }
-
 
 async fn simulate_ocr_llm_parsing(_image_base64: &str) -> ReceiptPayloadData {
     let draft_receipt_id = Uuid::new_v4().to_string();

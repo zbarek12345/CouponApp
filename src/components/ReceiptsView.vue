@@ -3,8 +3,22 @@
     <div class="card">
       <h2>Scan Receipt</h2>
       <div class="scan-section">
-        <textarea v-model="mockImageData" placeholder="Paste mock receipt image data..."></textarea>
-        <button @click="scanReceipt" :disabled="scanning">Scan Receipt</button>
+        <!-- Kamera lub wybór pliku -->
+        <input 
+          type="file" 
+          accept="image/*" 
+          capture="environment" 
+          @change="handleImageUpload" 
+        />
+        
+        <!-- Podgląd zrobionego zdjęcia przed wysłaniem na OCR -->
+        <div v-if="imagePreviewUrl" class="image-preview">
+          <img :src="imagePreviewUrl" alt="Receipt Preview" style="max-width: 100%; max-height: 300px; border-radius: 8px; margin-top: 10px;" />
+        </div>
+
+        <button @click="scanReceipt" :disabled="scanning || !imageBase64" style="margin-top: 10px;">
+          {{ scanning ? 'Scanning...' : 'Scan Receipt' }}
+        </button>
       </div>
 
       <div v-if="preview" class="preview">
@@ -88,7 +102,8 @@ const limit = ref(10)
 const hasMore = ref(false)
 
 // Scan state
-const mockImageData = ref('')
+const imageBase64 = ref('')
+const imagePreviewUrl = ref('')
 const scanning = ref(false)
 const saving = ref(false)
 const preview = ref(null)
@@ -98,6 +113,27 @@ const newShopName = ref('')
 // Detail view
 const selectedReceipt = ref(null)
 const receiptDetail = ref(null)
+
+// File upload handler (Kamera na smartfonie / plik na desktopie)
+const handleImageUpload = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Stwórzmy z pliku URL dla podglądu dla użytkownika
+  imagePreviewUrl.value = URL.createObjectURL(file);
+
+  // Przekonwertowanie pliku na Base64 dla Rusta
+  const reader = new FileReader();
+  reader.onload = () => {
+    const dataUrl = reader.result;
+    // Otrzymany string ma postać: "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
+    // Backend w RUST (base64::engine::general_purpose::STANDARD.decode) wymaga czystego base64.
+    // Musimy uciąć prefix.
+    const base64String = dataUrl.split(',')[1];
+    imageBase64.value = base64String;
+  };
+  reader.readAsDataURL(file);
+};
 const detailLoading = ref(false)
 
 const loadShops = async () => {
@@ -125,19 +161,25 @@ const loadReceipts = async (newOffset = 0) => {
 }
 
 const scanReceipt = async () => {
-  scanning.value = true
-  error.value = null
+  if (!imageBase64.value) return;
+
+  scanning.value = true;
+  error.value = null;
   try {
-    const result = await invoke('scan_receipt_image', {
-      request: { image_base64: mockImageData.value || 'mock-receipt-data' }
-    })
-    preview.value = result
-    await loadShops()
+    // Zgodnie ze specyfikacją z agents.md lub Rusta będzie to wywoływało z backendu OCR.
+    // Argument nosi nazwę image_base64, która w obiekcie trafia jako snake_case.
+    const result = await invoke('create_receipt', {
+      imageBase64: imageBase64.value
+    });
+    
+    preview.value = result;
+    await loadShops();
   } catch (err) {
-    error.value = err
-    console.error(err)
+    error.value = err;
+    console.error("OCR Error:", err);
+    alert("Wystąpił błąd OCR: " + err);
   } finally {
-    scanning.value = false
+    scanning.value = false;
   }
 }
 

@@ -13,6 +13,13 @@ pub struct Shop {
 }
 
 #[derive(Debug, Serialize)]
+pub struct ShopReqResult{
+    pub shop_id : String,
+    pub shop_name: String,
+    pub logo_base64 : Option<String>
+}
+
+#[derive(Debug, Serialize)]
 pub struct Code {
     pub code_id: String,
     pub code_value: String,
@@ -107,7 +114,7 @@ pub struct ReceiptScanPreview {
 #[derive(Debug, Deserialize)]
 pub struct CreateShopRequest {
     pub name: String,
-    pub logo: Option<String>,
+    pub logo: String,
 }
 
 /// User has reviewed the scan preview, selected a candidate and optionally
