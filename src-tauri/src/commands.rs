@@ -139,6 +139,44 @@ pub async fn load_shops(
 
     Ok(ret)
 }
+
+#[tauri::command]
+pub async fn load_shop(
+    state: tauri::State<'_, AppState>,
+    app: tauri::AppHandle,
+    shop_id: String,
+) -> Result<ShopReqResult, String> {
+    let row = sqlx::query_as!(
+        Shop,
+        "SELECT shop_id, shop_name, shop_logo FROM shops WHERE shop_id = ?",
+        shop_id
+    )
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|e| format!("Shop not found: {e}"))?;
+
+    let base_path = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("logos");
+
+    let logo_base64 = match &row.shop_logo {
+        Some(logo_name) => {
+            let image_path = base_path.join(logo_name);
+            let image_bytes = std::fs::read(&image_path)
+                .map_err(|e| format!("Failed to read logo '{}': {}", image_path.display(), e))?;
+            Some(base64::engine::general_purpose::STANDARD.encode(image_bytes))
+        }
+        None => None,
+    };
+
+    Ok(ShopReqResult {
+        shop_id: row.shop_id,
+        shop_name: row.shop_name,
+        logo_base64,
+    })
+}
 // ═══════════════════════════════════════════════════════════════
 // COUPON  –  two-phase: scan → preview → user edits → save
 // ═══════════════════════════════════════════════════════════════
@@ -210,6 +248,130 @@ pub async fn save_coupon(
     })
 }
 
+#[tauri::command]
+pub async fn load_coupon(
+    state: tauri::State<'_, AppState>,
+    app: tauri::AppHandle,
+    coupon_id: String,
+) -> Result<CouponDetailView, String> {
+    let coupon = sqlx::query_as!(
+        CouponView,
+        r#"
+        SELECT
+            c.coupon_id,
+            COALESCE(c.description, '')  AS "description!: String",
+            c.shop_id,
+            COALESCE(s.shop_name, '')  AS "shop_name!: String",
+            COALESCE(cd.code_value, '') AS "code_value!: String",
+            COALESCE(cd.code_type, '')  AS "code_type!: String"
+        FROM coupons c
+        JOIN shops  s  ON s.shop_id  = c.shop_id
+        JOIN codes  cd ON cd.code_id = c.code_id
+        WHERE c.coupon_id = ?
+        "#,
+        coupon_id
+    )
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|e| format!("Coupon not found: {e}"))?;
+
+    let shop = load_shop(state, app, coupon.shop_id.clone()).await?;
+
+    Ok(CouponDetailView {
+        coupon_id: coupon.coupon_id,
+        description: coupon.description,
+        shop_id: coupon.shop_id,
+        shop_name: coupon.shop_name,
+        shop_logo_base64: shop.logo_base64,
+        code_value: coupon.code_value,
+        code_type: coupon.code_type,
+    })
+}
+
+#[tauri::command]
+pub async fn load_coupons_for_shop(
+    state: tauri::State<'_, AppState>,
+    shop_id: String,
+    offset: i64,
+    limit: i64,
+) -> Result<Page<CouponView>, String> {
+    let total: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM coupons WHERE shop_id = ?"
+    )
+    .bind(&shop_id)
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let items = sqlx::query_as!(
+        CouponView,
+        r#"
+        SELECT
+            c.coupon_id,
+            COALESCE(c.description, '')  AS description,
+            c.shop_id,
+            COALESCE(s.shop_name, '')    AS shop_name,
+            COALESCE(cd.code_value, '')  AS code_value,
+            COALESCE(cd.code_type, '')   AS code_type
+        FROM coupons c
+        JOIN shops  s  ON s.shop_id  = c.shop_id
+        JOIN codes  cd ON cd.code_id = c.code_id
+        WHERE c.shop_id = ?
+        ORDER BY c.coupon_id
+        LIMIT ? OFFSET ?
+        "#,
+        shop_id,
+        limit,
+        offset
+    )
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    Ok(Page { items, total, offset, limit })
+}
+
+#[tauri::command]
+pub async fn load_receipts_for_shop(
+    state: tauri::State<'_, AppState>,
+    shop_id: String,
+    offset: i64,
+    limit: i64,
+) -> Result<Page<ReceiptSummary>, String> {
+    let total: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM receipts WHERE shop_id = ?"
+    )
+    .bind(&shop_id)
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let items = sqlx::query_as!(
+        ReceiptSummary,
+        r#"
+        SELECT
+            r.receipt_id,
+            r.shop_id,
+            COALESCE(s.shop_name, '')    AS shop_name,
+            COALESCE(r.total_value, 0.0) AS total_value,
+            COALESCE(r.total_discount, 0.0) AS total_discount
+        FROM receipts r
+        JOIN shops s ON s.shop_id = r.shop_id
+        WHERE r.shop_id = ?
+        ORDER BY r.receipt_id DESC
+        LIMIT ? OFFSET ?
+        "#,
+        shop_id,
+        limit,
+        offset
+    )
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    Ok(Page { items, total, offset, limit })
+}
+
 /// Paginated list of coupons joined with their shop and code.
 /// `offset` and `limit` are passed from the frontend (e.g. 0 / 20).
 #[tauri::command]
@@ -248,6 +410,7 @@ pub async fn load_coupons(
 
     Ok(Page { items, total, offset, limit })
 }
+
 
 #[tauri::command]
 pub async fn generate_coupon_code_from_str(state: tauri::State<'_, AppState>,coupon_value: &str, coupon_type : &str)-> Result<String, String>{
@@ -427,6 +590,7 @@ pub async fn save_receipt(
 
     Ok(ReceiptPayload {
         receipt_id,
+        shop_id,
         shop_name,
         total_value: request.total_value,
         total_discount: request.total_discount,
@@ -478,7 +642,7 @@ pub async fn load_receipt_detail(
 ) -> Result<ReceiptPayload, String> {
     let row = sqlx::query!(
         r#"
-        SELECT r.receipt_id, s.shop_name, r.total_value, r.total_discount
+        SELECT r.receipt_id, r.shop_id, s.shop_name, r.total_value, r.total_discount
         FROM receipts r
         JOIN shops s ON s.shop_id = r.shop_id
         WHERE r.receipt_id = ?
@@ -506,6 +670,7 @@ pub async fn load_receipt_detail(
 
     Ok(ReceiptPayload {
         receipt_id: row.receipt_id,
+        shop_id: row.shop_id,
         shop_name: row.shop_name,
         total_value: row.total_value,
         total_discount: row.total_discount.unwrap_or(0.0),
@@ -622,7 +787,7 @@ fn resolve_oar_model_paths(app: &tauri::AppHandle) -> Result<OarModelPaths, Stri
         std::fs::create_dir_all(&default_dir)
             .map_err(|e| format!("Failed to create OCR models directory: {e}"))?;
     }
-    
+
     let setup_dir = Path::new("./ocr-models");
 
     let paths = OarModelPaths {
@@ -889,10 +1054,14 @@ pub async fn run() {
             // Shops
             create_shop,
             load_shops,
+            load_shop,
+            load_coupons_for_shop,
+            load_receipts_for_shop,
             // Coupons
             scan_coupon_image,
             save_coupon,
             load_coupons,
+            load_coupon,
             generate_coupon_code_from_str,
             // Receipts
             scan_receipt_image,

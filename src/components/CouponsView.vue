@@ -40,10 +40,20 @@
     <!-- Tab panels -->
     <div class="view-body">
       <transition name="tab-slide" mode="out-in">
+        <CouponView
+          v-if="selectedCouponId"
+          key="detail"
+          :coupon-id="selectedCouponId"
+          back-label="All Coupons"
+          @back="selectedCouponId = null"
+          @go-to-shop="$emit('go-to-shop', $event)"
+        />
         <CouponsBrowseView
-          v-if="activeTab === 'browse'"
+          v-else-if="activeTab === 'browse'"
           key="browse"
           :refresh-key="refreshKey"
+          @open-coupon="selectedCouponId = $event"
+          @go-to-shop="$emit('go-to-shop', $event)"
         />
         <CouponsAddView
           v-else
@@ -56,12 +66,20 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import CouponsBrowseView from './CouponsView/CouponsBrowseView.vue'
 import CouponsAddView from './CouponsView/CouponsAddView.vue'
+import CouponView from './CouponsView/CouponView.vue'
+
+const props = defineProps({
+  selectedCouponId: { type: String, default: null },
+})
+
+defineEmits(['go-to-shop'])
 
 const activeTab = ref('browse')
 const refreshKey = ref(0)
+const selectedCouponId = ref(props.selectedCouponId)
 
 const onCouponSaved = () => {
   // Increment triggers a watch in BrowseView → re-fetches from page 1
@@ -69,6 +87,15 @@ const onCouponSaved = () => {
   // Switch to browse so the user can see the saved coupon immediately
   activeTab.value = 'browse'
 }
+
+watch(
+  () => props.selectedCouponId,
+  (couponId) => {
+    selectedCouponId.value = couponId
+    if (couponId) activeTab.value = 'browse'
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>

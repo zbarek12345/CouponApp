@@ -1,5 +1,12 @@
 <template>
-  <div>
+  <ReceiptView
+    v-if="detailReceiptId"
+    :receipt-id="detailReceiptId"
+    @back="detailReceiptId = null"
+    @go-to-shop="$emit('go-to-shop', $event)"
+  />
+
+  <div v-else>
     <div class="card">
       <h2>Scan Receipt</h2>
       <div class="scan-section">
@@ -106,20 +113,16 @@
       <div v-else-if="error" class="error">{{ error }}</div>
       <div v-else>
         <div v-for="receipt in receipts" :key="receipt.receipt_id" class="receipt-item-summary">
-          <div class="receipt-header" @click="viewDetail(receipt.receipt_id)">
-            <strong>{{ receipt.shop_name }}</strong>
-            <span class="total">${{ receipt.total_value.toFixed(2) }}</span>
-          </div>
-          <div class="receipt-detail" v-if="selectedReceipt === receipt.receipt_id">
-            <div v-if="detailLoading">Loading details...</div>
-            <div v-else-if="receiptDetail">
-              <p><strong>Discount:</strong> ${{ receiptDetail.total_discount.toFixed(2) }}</p>
-              <h5>Items:</h5>
-              <div v-for="item in receiptDetail.entries" :key="item.entry_id" class="detail-item">
-                {{ item.entry_name }} - {{ item.entry_quantity }} x ${{ item.entry_cost.toFixed(2) }}
-                <span v-if="item.entry_discount > 0">(Discount: ${{ item.entry_discount }})</span>
-              </div>
+          <div class="receipt-header" @click="openReceipt(receipt.receipt_id)">
+            <div class="receipt-shop-logo" @click.stop="$emit('go-to-shop', receipt.shop_id)">
+              <img v-if="shopLogo(receipt.shop_id)" :src="`data:image/png;base64,${shopLogo(receipt.shop_id)}`" :alt="receipt.shop_name" />
+              <span v-else>{{ receipt.shop_name.charAt(0).toUpperCase() }}</span>
             </div>
+            <div class="receipt-summary-text">
+              <strong>{{ receipt.shop_name }}</strong>
+              <small>{{ receipt.total_discount > 0 ? `Discount $${receipt.total_discount.toFixed(2)}` : 'Receipt' }}</small>
+            </div>
+            <span class="total">${{ receipt.total_value.toFixed(2) }}</span>
           </div>
         </div>
       </div>
@@ -128,8 +131,15 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import ReceiptView from './ReceiptView.vue'
+
+const props = defineProps({
+  selectedReceiptId: { type: String, default: null },
+})
+
+defineEmits(['go-to-shop'])
 
 const shops = ref([])
 const receipts = ref([])
@@ -152,9 +162,7 @@ const preview = ref(null)
 const selectedShopId = ref('')
 const newShopName = ref('')
 
-// Detail view
-const selectedReceipt = ref(null)
-const receiptDetail = ref(null)
+const detailReceiptId = ref(null)
 
 // File upload handler (Kamera na smartfonie / plik na desktopie)
 const handleImageUpload = (event) => {
@@ -176,8 +184,6 @@ const handleImageUpload = (event) => {
   };
   reader.readAsDataURL(file);
 };
-const detailLoading = ref(false)
-
 const measureImage = (event) => {
   const image = event.target
   imageNaturalSize.value = {
@@ -257,6 +263,8 @@ const scanReceipt = async () => {
   }
 }
 
+const shopLogo = (shopId) => shops.value.find((shop) => shop.shop_id === shopId)?.logo_base64
+
 const analyzeOcrBlocks = async () => {
   const blocksInput = JSON.parse(ocrBlocksJson.value)
   const blocks = Array.isArray(blocksInput) ? blocksInput : blocksInput.blocks
@@ -312,27 +320,20 @@ const addReceiptEntry = () => {
   })
 }
 
-const viewDetail = async (receiptId) => {
-  if (selectedReceipt.value === receiptId) {
-    selectedReceipt.value = null
-    receiptDetail.value = null
-    return
-  }
-  
-  selectedReceipt.value = receiptId
-  detailLoading.value = true
-  
-  try {
-    receiptDetail.value = await invoke('load_receipt_detail', { receiptId })
-  } catch (err) {
-    error.value = err
-    console.error(err)
-  } finally {
-    detailLoading.value = false
-  }
+const openReceipt = (receiptId) => {
+  detailReceiptId.value = receiptId
 }
 
 loadReceipts(0)
+loadShops()
+
+watch(
+  () => props.selectedReceiptId,
+  (receiptId) => {
+    if (receiptId) openReceipt(receiptId)
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>
@@ -482,6 +483,8 @@ loadReceipts(0)
   background: #f9f9f9;
   cursor: pointer;
   display: flex;
+  align-items: center;
+  gap: 12px;
   justify-content: space-between;
   transition: background 0.3s;
 }
@@ -495,16 +498,40 @@ loadReceipts(0)
   color: #667eea;
 }
 
-.receipt-detail {
-  padding: 12px;
-  border-top: 1px solid #eee;
-  background: white;
+.receipt-shop-logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #eef2ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.detail-item {
-  padding: 5px 0;
-  font-size: 14px;
-  border-bottom: 1px solid #f0f0f0;
+.receipt-shop-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.receipt-shop-logo span {
+  color: #667eea;
+  font-weight: 800;
+  font-size: 20px;
+}
+
+.receipt-summary-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.receipt-summary-text small {
+  color: #777;
 }
 
 .pagination {
