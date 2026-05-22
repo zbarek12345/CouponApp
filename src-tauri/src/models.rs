@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
 use rxing::Point;
 // ─────────────────────────────────────────────
 // Persisted DB models (returned after a save)
@@ -93,20 +92,6 @@ pub struct ReceiptEntryDraft {
     pub entry_discount: f64,
 }
 
-/// Everything the frontend needs to show a "confirm your receipt" screen.
-#[derive(Debug, Serialize)]
-pub struct ReceiptScanPreview {
-    /// Shops that matched the receipt header; user picks or creates new
-    pub matched_shops: Vec<Shop>,
-    /// shop_id pre-selected (may be empty string if no match found)
-    pub suggested_shop_id: String,
-    /// Raw shop name string parsed from the image, for display / new-shop creation
-    pub raw_shop_name: String,
-    pub total_value: f64,
-    pub total_discount: f64,
-    pub entries: Vec<ReceiptEntryDraft>,
-}
-
 // ─────────────────────────────────────────────
 // Inbound save requests (frontend → backend)
 // ─────────────────────────────────────────────
@@ -190,16 +175,4 @@ pub struct ReceiptSummary {
 
 pub struct AppState {
     pub pool: sqlx::SqlitePool,
-}
-
-// ─────────────────────────────────────────────
-// Internal pipeline types (not exposed to JS)
-// ─────────────────────────────────────────────
-
-pub struct ReceiptPayloadData {
-    pub shop_id: String,
-    pub raw_shop_name: String,
-    pub total_value: f64,
-    pub total_discount: f64,
-    pub entries: Vec<ReceiptEntryDraft>,
 }

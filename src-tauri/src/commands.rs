@@ -1,11 +1,32 @@
 use crate::models::*;
+use crate::ocr_handler::{
+    analyze_receipt_layout, OcrBlock, ReceiptFieldCandidate, ReceiptLineCandidate,
+};
 use sqlx::{Sqlite, SqlitePool, migrate::MigrateDatabase, sqlite::SqlitePoolOptions};
 use uuid::Uuid;
 use base64::Engine;
 use tauri::{Manager,path::BaseDirectory};
-use dirs::data_dir;
+use std::path::PathBuf;
 #[path = "codes_handler.rs"]
 mod codes_handler;
+
+#[derive(Debug, serde::Deserialize)]
+pub struct ScanOcrBlocksRequest {
+    pub blocks: Vec<OcrBlock>,
+}
+
+#[derive(Debug, serde::Serialize)]
+pub struct ReceiptScanReview {
+    pub matched_shops: Vec<Shop>,
+    pub suggested_shop_id: String,
+    pub raw_shop_name: String,
+    pub total_value: f64,
+    pub total_discount: f64,
+    pub entries: Vec<ReceiptEntryDraft>,
+    pub ocr_blocks: Vec<OcrBlock>,
+    pub lines: Vec<ReceiptLineCandidate>,
+    pub field_candidates: Vec<ReceiptFieldCandidate>,
+}
 
 // ═══════════════════════════════════════════════════════════════
 // SHOP
@@ -276,32 +297,54 @@ pub async fn generate_coupon_code(
 // RECEIPT  –  two-phase: scan → preview → user edits → save
 // ═══════════════════════════════════════════════════════════════
 
-/// Phase 1 – OCR + LLM parse.  Nothing written to DB.
+/// Phase 1 – parse OCR word boxes. Nothing written to DB.
 /// Returns a preview the user can edit: shop candidates, line items, totals.
 #[tauri::command]
 pub async fn scan_receipt_image(
     state: tauri::State<'_, AppState>,
+    app: tauri::AppHandle,
     request: ScanImageRequest,
-) -> Result<ReceiptScanPreview, String> {
-    // 📄 Replace with real OCR → Claude API pipeline.
-    let parsed = simulate_ocr_llm_parsing(&request.image_base64).await;
+) -> Result<ReceiptScanReview, String> {
+    let blocks = if looks_like_ocr_json(&request.image_base64) {
+        parse_receipt_ocr_blocks(&request.image_base64)?
+    } else {
+        scan_image_with_oar_ocr(app, request.image_base64).await?
+    };
 
-    // Find shops whose name is similar to what was parsed from the receipt.
-    let matched_shops = find_matching_shops(&state.pool, &parsed.raw_shop_name).await?;
+    build_receipt_scan_review(&state.pool, blocks).await
+}
 
-    // Use the first match as the suggestion, or empty string.
+/// Same parser as `scan_receipt_image`, but starts from OCR words that were
+/// already produced by a frontend OCR/camera plugin.
+#[tauri::command]
+pub async fn scan_receipt_ocr_blocks(
+    state: tauri::State<'_, AppState>,
+    request: ScanOcrBlocksRequest,
+) -> Result<ReceiptScanReview, String> {
+    build_receipt_scan_review(&state.pool, request.blocks).await
+}
+
+async fn build_receipt_scan_review(
+    pool: &SqlitePool,
+    blocks: Vec<OcrBlock>,
+) -> Result<ReceiptScanReview, String> {
+    let analysis = analyze_receipt_layout(blocks);
+    let matched_shops = find_matching_shops(pool, &analysis.raw_shop_name).await?;
     let suggested_shop_id = matched_shops
         .first()
         .map(|s| s.shop_id.clone())
         .unwrap_or_default();
 
-    Ok(ReceiptScanPreview {
+    Ok(ReceiptScanReview {
         matched_shops,
         suggested_shop_id,
-        raw_shop_name: parsed.raw_shop_name,
-        total_value: parsed.total_value,
-        total_discount: parsed.total_discount,
-        entries: parsed.entries,
+        raw_shop_name: analysis.raw_shop_name,
+        total_value: analysis.total_value,
+        total_discount: analysis.total_discount,
+        entries: analysis.entries,
+        ocr_blocks: analysis.ocr_blocks,
+        lines: analysis.lines,
+        field_candidates: analysis.field_candidates,
     })
 }
 
@@ -487,40 +530,280 @@ async fn find_matching_shops(pool: &SqlitePool, raw_name: &str) -> Result<Vec<Sh
     .map_err(|e| e.to_string())
 }
 
+fn parse_receipt_ocr_blocks(input: &str) -> Result<Vec<OcrBlock>, String> {
+    let trimmed = input.trim();
+
+    if trimmed.starts_with('{') {
+        let value: serde_json::Value =
+            serde_json::from_str(trimmed).map_err(|e| format!("Invalid OCR JSON object: {e}"))?;
+        let blocks = value
+            .get("blocks")
+            .cloned()
+            .ok_or_else(|| "OCR JSON object must contain a blocks array".to_string())?;
+        return serde_json::from_value(blocks)
+            .map_err(|e| format!("Invalid OCR blocks schema: {e}"));
+    }
+
+    if trimmed.starts_with('[') {
+        return serde_json::from_str(trimmed)
+            .map_err(|e| format!("Invalid OCR JSON array: {e}"));
+    }
+
+    Err("Receipt scan now expects OCR word boxes JSON. Use scan_receipt_ocr_blocks, or pass JSON as image_base64 for compatibility.".to_string())
+}
+
+fn looks_like_ocr_json(input: &str) -> bool {
+    let trimmed = input.trim();
+    trimmed.starts_with('{') || trimmed.starts_with('[')
+}
+
+async fn scan_image_with_oar_ocr(
+    app: tauri::AppHandle,
+    image_base64: String,
+) -> Result<Vec<OcrBlock>, String> {
+    let model_paths = resolve_oar_model_paths(&app)?;
+    let image_bytes = decode_image_base64(&image_base64)?;
+
+    tauri::async_runtime::spawn_blocking(move || {
+        let image = image::load_from_memory(&image_bytes)
+            .map_err(|e| format!("Failed to decode receipt image: {e}"))?
+            .to_rgb8();
+
+        let mut builder = oar_ocr::oarocr::OAROCRBuilder::new(
+            model_paths.text_detection,
+            model_paths.text_recognition,
+            model_paths.character_dict,
+        )
+        .return_word_box(true)
+        .image_batch_size(1)
+        .region_batch_size(16);
+
+        if let Some(path) = model_paths.document_orientation {
+            builder = builder.with_document_image_orientation_classification(path);
+        }
+
+        if let Some(path) = model_paths.text_line_orientation {
+            builder = builder.with_text_line_orientation_classification(path);
+        }
+
+        let ocr = builder
+            .build()
+            .map_err(|e| format!("Failed to initialize local OAR OCR pipeline: {e}"))?;
+        let mut results = ocr
+            .predict(vec![image])
+            .map_err(|e| format!("Local OAR OCR scan failed: {e}"))?;
+
+        let result = results
+            .pop()
+            .ok_or_else(|| "Local OAR OCR returned no image result".to_string())?;
+
+        Ok(oar_regions_to_blocks(result.text_regions))
+    })
+    .await
+    .map_err(|e| format!("Local OAR OCR worker failed: {e}"))?
+}
+
+struct OarModelPaths {
+    text_detection: PathBuf,
+    text_recognition: PathBuf,
+    character_dict: PathBuf,
+    document_orientation: Option<PathBuf>,
+    text_line_orientation: Option<PathBuf>,
+}
+
+fn resolve_oar_model_paths(app: &tauri::AppHandle) -> Result<OarModelPaths, String> {
+    let default_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("ocr-models");
+
+    let paths = OarModelPaths {
+        text_detection: env_path_or_default(
+            "OAR_OCR_TEXT_DETECTION_MODEL",
+            default_dir.join("det.onnx"),
+        ),
+        text_recognition: env_path_or_default(
+            "OAR_OCR_TEXT_RECOGNITION_MODEL",
+            default_dir.join("rec.onnx"),
+        ),
+        character_dict: env_path_or_default(
+            "OAR_OCR_CHARACTER_DICT",
+            default_dir.join("dict.txt"),
+        ),
+        document_orientation: optional_env_path_or_default(
+            "OAR_OCR_DOCUMENT_ORIENTATION_MODEL",
+            default_dir.join("doc_orient.onnx"),
+        ),
+        text_line_orientation: optional_env_path_or_default(
+            "OAR_OCR_TEXT_LINE_ORIENTATION_MODEL",
+            default_dir.join("line_orient.onnx"),
+        ),
+    };
+
+    for (label, path) in [
+        ("text detection model", &paths.text_detection),
+        ("text recognition model", &paths.text_recognition),
+        ("character dictionary", &paths.character_dict),
+    ] {
+        if !path.exists() {
+            return Err(format!(
+                "Missing OAR OCR {label}: {}. Put models in the app data ocr-models folder or set OAR_OCR_TEXT_DETECTION_MODEL, OAR_OCR_TEXT_RECOGNITION_MODEL, and OAR_OCR_CHARACTER_DICT.",
+                path.display()
+            ));
+        }
+    }
+
+    Ok(paths)
+}
+
+fn env_path_or_default(name: &str, default_path: PathBuf) -> PathBuf {
+    std::env::var_os(name)
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
+        .unwrap_or(default_path)
+}
+
+fn optional_env_path_or_default(name: &str, default_path: PathBuf) -> Option<PathBuf> {
+    std::env::var_os(name)
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
+        .or_else(|| default_path.exists().then_some(default_path))
+}
+
+fn decode_image_base64(image_base64: &str) -> Result<Vec<u8>, String> {
+    let payload = image_base64
+        .split_once(',')
+        .map(|(_, payload)| payload)
+        .unwrap_or(image_base64)
+        .trim();
+
+    base64::engine::general_purpose::STANDARD
+        .decode(payload)
+        .map_err(|e| format!("Invalid receipt image base64: {e}"))
+}
+
+fn oar_regions_to_blocks(regions: Vec<oar_ocr::oarocr::TextRegion>) -> Vec<OcrBlock> {
+    regions
+        .into_iter()
+        .flat_map(|region| {
+            let Some(text) = region.text else {
+                return Vec::new();
+            };
+
+            let text = text.to_string();
+            if text.trim().is_empty() {
+                return Vec::new();
+            }
+
+            if let Some(word_boxes) = region.word_boxes {
+                let words = text.split_whitespace().collect::<Vec<_>>();
+                if !words.is_empty() && words.len() == word_boxes.len() {
+                    return words
+                        .into_iter()
+                        .zip(word_boxes)
+                        .map(|(word, bbox)| OcrBlock {
+                            text: word.to_string(),
+                            bounding_box: oar_box_to_receipt_box(&bbox),
+                        })
+                        .collect();
+                }
+            }
+
+            let words = text.split_whitespace().collect::<Vec<_>>();
+            if words.len() > 1 {
+                return split_region_text_into_blocks(&text, &region.bounding_box);
+            }
+
+            vec![OcrBlock {
+                text,
+                bounding_box: oar_box_to_receipt_box(&region.bounding_box),
+            }]
+        })
+        .collect()
+}
+
+fn split_region_text_into_blocks(
+    text: &str,
+    box_: &oar_ocr::processors::BoundingBox,
+) -> Vec<OcrBlock> {
+    let x = box_.x_min() as f64;
+    let y = box_.y_min() as f64;
+    let width = (box_.x_max() as f64 - x).max(1.0);
+    let height = (box_.y_max() as f64 - y).max(1.0);
+    let text_lines = text.lines().filter(|line| !line.trim().is_empty()).collect::<Vec<_>>();
+
+    if text_lines.len() > 1 {
+        let line_height = height / text_lines.len() as f64;
+
+        return text_lines
+            .into_iter()
+            .enumerate()
+            .flat_map(|(line_index, line)| {
+                split_text_line_into_blocks(line, x, y + line_height * line_index as f64, width, line_height)
+            })
+            .collect();
+    }
+
+    split_text_line_into_blocks(text, x, y, width, height)
+}
+
+fn split_text_line_into_blocks(
+    text: &str,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+) -> Vec<OcrBlock> {
+    let text_len = text.len().max(1) as f64;
+    let mut cursor = 0usize;
+
+    text.split_whitespace()
+        .map(|word| {
+            let leading_bytes = text[cursor..]
+                .char_indices()
+                .find(|(_, character)| !character.is_whitespace())
+                .map(|(index, _)| index)
+                .unwrap_or(0);
+            cursor += leading_bytes;
+
+            let start = cursor;
+            cursor += word.len();
+
+            let start_ratio = start as f64 / text_len;
+            let end_ratio = cursor as f64 / text_len;
+
+            OcrBlock {
+                text: word.to_string(),
+                bounding_box: crate::ocr_handler::BoundingBox {
+                    x: x + width * start_ratio,
+                    y,
+                    width: (width * (end_ratio - start_ratio)).max(6.0),
+                    height,
+                },
+            }
+        })
+        .collect()
+}
+
+fn oar_box_to_receipt_box(box_: &oar_ocr::processors::BoundingBox) -> crate::ocr_handler::BoundingBox {
+    let x = box_.x_min() as f64;
+    let y = box_.y_min() as f64;
+    crate::ocr_handler::BoundingBox {
+        x,
+        y,
+        width: (box_.x_max() as f64 - x).max(0.0),
+        height: (box_.y_max() as f64 - y).max(0.0),
+    }
+}
+
 // ═══════════════════════════════════════════════════════════════
 // ── SIMULATIONS ─────────────────────────────────────────────
-// Replace these with real rxing / OCR+LLM implementations.
+// Replace these with real rxing / OCR implementations.
 // ═══════════════════════════════════════════════════════════════
 
 async fn detect_codes(_image_base64: &str) -> Vec<CodeCandidate>{
     return codes_handler::codes_handler::read_image_code(_image_base64.to_string()).await.unwrap();
-}
-
-async fn simulate_ocr_llm_parsing(_image_base64: &str) -> ReceiptPayloadData {
-    let draft_receipt_id = Uuid::new_v4().to_string();
-
-    ReceiptPayloadData {
-        shop_id: String::new(), // not known yet – matched in scan_receipt_image
-        raw_shop_name: "Cyberdyne Coffee".to_string(),
-        total_value: 18.50,
-        total_discount: 2.00,
-        entries: vec![
-            ReceiptEntryDraft {
-                draft_id: Uuid::new_v4().to_string(),
-                entry_name: "Tactical Espresso Double Shot".to_string(),
-                entry_quantity: 2,
-                entry_cost: 5.00,
-                entry_discount: 0.50,
-            },
-            ReceiptEntryDraft {
-                draft_id: Uuid::new_v4().to_string(),
-                entry_name: "Cyber-Croissant V2".to_string(),
-                entry_quantity: 1,
-                entry_cost: 10.50,
-                entry_discount: 1.00,
-            },
-        ],
-    }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -591,6 +874,7 @@ pub async fn run() {
             generate_coupon_code_from_str,
             // Receipts
             scan_receipt_image,
+            scan_receipt_ocr_blocks,
             save_receipt,
             load_receipts,
             load_receipt_detail,
