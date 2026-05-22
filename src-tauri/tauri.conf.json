@@ -25,7 +25,8 @@
   "bundle": {
     "active": false,
     "resources": [
-      "migrations"
+      "migrations",
+      "ocr-models"
     ]
   },
   "plugins": {}

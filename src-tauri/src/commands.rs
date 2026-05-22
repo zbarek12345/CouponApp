@@ -6,7 +6,7 @@ use sqlx::{Sqlite, SqlitePool, migrate::MigrateDatabase, sqlite::SqlitePoolOptio
 use uuid::Uuid;
 use base64::Engine;
 use tauri::{Manager,path::BaseDirectory};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 #[path = "codes_handler.rs"]
 mod codes_handler;
 
@@ -618,6 +618,13 @@ fn resolve_oar_model_paths(app: &tauri::AppHandle) -> Result<OarModelPaths, Stri
         .map_err(|e| e.to_string())?
         .join("ocr-models");
 
+    if !default_dir.exists() {
+        std::fs::create_dir_all(&default_dir)
+            .map_err(|e| format!("Failed to create OCR models directory: {e}"))?;
+    }
+    
+    let setup_dir = Path::new("./ocr-models");
+
     let paths = OarModelPaths {
         text_detection: env_path_or_default(
             "OAR_OCR_TEXT_DETECTION_MODEL",
@@ -640,13 +647,28 @@ fn resolve_oar_model_paths(app: &tauri::AppHandle) -> Result<OarModelPaths, Stri
             default_dir.join("line_orient.onnx"),
         ),
     };
-
+    
     for (label, path) in [
         ("text detection model", &paths.text_detection),
         ("text recognition model", &paths.text_recognition),
         ("character dictionary", &paths.character_dict),
     ] {
         if !path.exists() {
+            let file_name = match label {
+                "text detection model" => "det.onnx",
+                "text recognition model" => "rec.onnx",
+                "character dictionary" => "dict.txt",
+                _ => "unknown",
+            };
+
+            let setup_path: PathBuf = setup_dir.join(file_name);
+            
+            if std::fs::exists(&setup_path).is_ok() {
+                std::fs::copy(setup_path, path)
+                    .map_err(|e| format!("Failed to copy {label} from setup directory: {e}"))?;
+                continue;
+            }
+
             return Err(format!(
                 "Missing OAR OCR {label}: {}. Put models in the app data ocr-models folder or set OAR_OCR_TEXT_DETECTION_MODEL, OAR_OCR_TEXT_RECOGNITION_MODEL, and OAR_OCR_CHARACTER_DICT.",
                 path.display()
