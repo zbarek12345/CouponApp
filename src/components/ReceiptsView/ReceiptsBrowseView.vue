@@ -1,38 +1,39 @@
 <template>
   <div>
-    <div class="pagination">
-      <button @click="loadReceipts(0)" :disabled="loading">Refresh</button>
-      <button @click="loadReceipts(offset - limit)" :disabled="offset === 0">Previous</button>
-      <button @click="loadReceipts(offset + limit)" :disabled="!hasMore">Next</button>
-    </div>
+    <ReceiptView
+      v-if="selectedReceipt"
+      :receipt-id="selectedReceipt"
+      @back="selectedReceipt = null"
+      @go-to-shop="$emit('go-to-shop', $event)"
+    />
 
-    <div v-if="loading" class="loading">Loading...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else>
-      <div v-for="receipt in receipts" :key="receipt.receipt_id" class="receipt-item-summary">
-        <div class="receipt-header" @click="viewDetail(receipt.receipt_id)">
-          <strong>{{ receipt.shop_name }}</strong>
-          <span class="total">${{ receipt.total_value.toFixed(2) }}</span>
-        </div>
-        <div class="receipt-detail" v-if="selectedReceipt === receipt.receipt_id">
-          <div v-if="detailLoading">Loading details...</div>
-          <div v-else-if="receiptDetail">
-            <p><strong>Discount:</strong> ${{ receiptDetail.total_discount.toFixed(2) }}</p>
-            <h5>Items:</h5>
-            <div v-for="item in receiptDetail.entries" :key="item.entry_id" class="detail-item">
-              {{ item.entry_name }} - {{ item.entry_quantity }} x ${{ item.entry_cost.toFixed(2) }}
-              <span v-if="item.entry_discount > 0">(Discount: ${{ item.entry_discount }})</span>
-            </div>
+    <template v-else>
+      <div class="pagination">
+        <button @click="loadReceipts(0)" :disabled="loading">Refresh</button>
+        <button @click="loadReceipts(offset - limit)" :disabled="offset === 0">Previous</button>
+        <button @click="loadReceipts(offset + limit)" :disabled="!hasMore">Next</button>
+      </div>
+
+      <div v-if="loading" class="loading">Loading...</div>
+      <div v-else-if="error" class="error">{{ error }}</div>
+      <div v-else>
+        <div v-for="receipt in receipts" :key="receipt.receipt_id" class="receipt-item-summary">
+          <div class="receipt-header" @click="viewDetail(receipt.receipt_id)">
+            <strong>{{ receipt.shop_name }}</strong>
+            <span class="total">${{ receipt.total_value.toFixed(2) }}</span>
           </div>
         </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import ReceiptView from '../ReceiptView.vue'
+
+defineEmits(['go-to-shop'])
 
 const receipts = ref([])
 const loading = ref(false)
@@ -41,8 +42,6 @@ const offset = ref(0)
 const limit = ref(10)
 const hasMore = ref(false)
 const selectedReceipt = ref(null)
-const receiptDetail = ref(null)
-const detailLoading = ref(false)
 
 const loadReceipts = async (newOffset = 0) => {
   loading.value = true
@@ -61,23 +60,7 @@ const loadReceipts = async (newOffset = 0) => {
 }
 
 const viewDetail = async (receiptId) => {
-  if (selectedReceipt.value === receiptId) {
-    selectedReceipt.value = null
-    receiptDetail.value = null
-    return
-  }
-
   selectedReceipt.value = receiptId
-  detailLoading.value = true
-
-  try {
-    receiptDetail.value = await invoke('load_receipt_detail', { receiptId })
-  } catch (err) {
-    error.value = err
-    console.error(err)
-  } finally {
-    detailLoading.value = false
-  }
 }
 
 onMounted(() => loadReceipts(0))
@@ -114,17 +97,5 @@ onMounted(() => loadReceipts(0))
 .total {
   font-weight: bold;
   color: #667eea;
-}
-
-.receipt-detail {
-  padding: 12px;
-  border-top: 1px solid #eee;
-  background: white;
-}
-
-.detail-item {
-  padding: 5px 0;
-  font-size: 14px;
-  border-bottom: 1px solid #f0f0f0;
 }
 </style>

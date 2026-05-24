@@ -6,7 +6,7 @@
       <button v-else class="btn-ghost" @click="activeView = 'list'">Back to list</button>
     </div>
 
-    <ReceiptsBrowseView v-if="activeView === 'list'" />
+    <ReceiptsBrowseView v-if="activeView === 'list'" @go-to-shop="$emit('go-to-shop', $event)" />
     <ReceiptsAddView v-else @saved="activeView = 'list'" />
   </div>
 </template>
@@ -15,6 +15,8 @@
 import { ref } from 'vue'
 import ReceiptsBrowseView from './ReceiptsView/ReceiptsBrowseView.vue'
 import ReceiptsAddView from './ReceiptsView/ReceiptsAddView.vue'
+
+defineEmits(['go-to-shop'])
 
 const activeView = ref('list')
 </script>
