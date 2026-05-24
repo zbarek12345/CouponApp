@@ -6,11 +6,14 @@
       <div class="sv-header">
         <h2>Shops</h2>
         <div class="sv-header-actions">
-          <button class="btn-ghost" @click="loadShops" :disabled="loading">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-            Refresh
+          <button class="btn-ghost icon-btn" @click="displayMode = displayMode === 'list' ? 'carousel' : 'list'" title="Toggle view mode">
+            <svg v-if="displayMode === 'list'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
           </button>
-          <button @click="view = 'create'">+ New Shop</button>
+          <button class="btn-ghost icon-btn" @click="loadShops" :disabled="loading" title="Refresh">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+          </button>
+          <button @click="view = 'create'" class="new-shop-btn">+ New</button>
         </div>
       </div>
 
@@ -27,7 +30,13 @@
         <button @click="view = 'create'">Create your first shop</button>
       </div>
 
-      <div v-else class="shop-list">
+      <div
+        v-else
+        :class="['shop-list', displayMode === 'carousel' ? 'shop-list-carousel' : '']"
+        @touchstart.stop
+        @touchend.stop
+        @touchmove.stop
+      >
         <button
           v-for="shop in shops"
           :key="shop.shop_id"
@@ -40,7 +49,6 @@
           </div>
           <div class="shop-info">
             <strong>{{ shop.shop_name }}</strong>
-            <small>{{ shop.shop_id }}</small>
           </div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="chevron"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
@@ -170,6 +178,7 @@ import { invoke } from '@tauri-apps/api/core'
 
 // ── State ──────────────────────────────────────────────────────────────────
 const view = ref('browser')           // 'browser' | 'create' | 'detail'
+const displayMode = ref('list')       // 'list' | 'carousel'
 const shops = ref([])
 const currentShop = ref(null)
 const loading = ref(false)
@@ -250,7 +259,6 @@ onMounted(loadShops)
 
 <style scoped>
 /* ── Layout ────────────────────────────────────────────────────────────── */
-.shops-view { }
 
 .sv-header {
   display: flex;
@@ -259,7 +267,27 @@ onMounted(loadShops)
   margin-bottom: 18px;
 }
 .sv-header h2 { font-size: 20px; font-weight: 700; margin: 0; }
-.sv-header-actions { display: flex; gap: 8px; }
+.sv-header-actions { display: flex; gap: 8px; align-items: center; }
+
+.icon-btn {
+  padding: 8px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #667eea;
+  border: 1px solid transparent;
+}
+.btn-ghost:hover {
+  background: #f0f0ff;
+}
+
+.new-shop-btn {
+  padding: 8px 12px;
+}
 
 /* ── States ────────────────────────────────────────────────────────────── */
 .sv-state {
@@ -285,6 +313,23 @@ onMounted(loadShops)
 /* ── Shop list ─────────────────────────────────────────────────────────── */
 .shop-list { display: flex; flex-direction: column; gap: 8px; }
 
+.shop-list-carousel {
+  flex-direction: row;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: 12px;
+  padding-bottom: 8px;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  scrollbar-width: none;
+}
+
+.shop-list-carousel::-webkit-scrollbar {
+  display: none;
+}
+
 .shop-row {
   display: flex;
   align-items: center;
@@ -298,6 +343,16 @@ onMounted(loadShops)
   width: 100%;
   color: inherit;
   transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.shop-list-carousel .shop-row {
+  flex: 0 0 82%;
+  max-width: 300px;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 16px 16px;
+  scroll-snap-align: start;
 }
 .shop-row:hover {
   border-color: #667eea;
@@ -321,12 +376,48 @@ onMounted(loadShops)
 }
 .logo-initial--lg { font-size: 28px; }
 
+.shop-list-carousel .shop-logo {
+  width: 104px;
+  height: 104px;
+  border-radius: 18px;
+}
+
+.shop-list-carousel .logo-initial {
+  font-size: 34px;
+}
+
 .shop-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .shop-info strong { font-size: 15px; }
 .shop-info small { font-size: 11px; color: #bbb; font-family: monospace; }
 
+.shop-list-carousel .shop-info {
+  flex: 0;
+  width: 100%;
+  gap: 0;
+  align-items: center;
+  text-align: center;
+}
+
+.shop-list-carousel .shop-info strong {
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.shop-list-carousel .shop-info small {
+  display: none;
+}
+
 .chevron { color: #ccc; flex-shrink: 0; }
 .shop-row:hover .chevron { color: #667eea; }
+
+.shop-list-carousel .chevron {
+  display: none;
+}
+
+.shop-list-carousel .shop-info {
+  align-items: center;
+  text-align: center;
+}
 
 /* ── Back button ───────────────────────────────────────────────────────── */
 .btn-back {
@@ -438,7 +529,6 @@ label { font-size: 13px; font-weight: 600; color: #444; }
 .detail-tab.active { color: #667eea; border-bottom-color: #667eea; background: none; }
 
 /* ── Detail sections ───────────────────────────────────────────────────── */
-.detail-section { }
 .section-toolbar {
   display: flex;
   align-items: center;

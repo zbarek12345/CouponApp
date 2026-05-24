@@ -4,15 +4,114 @@
   box-sizing: border-box;
 }
 
-html, body {
+:root {
+  --app-bg: #eef4ff;
+  --app-surface: #ffffff;
+  --app-surface-alt: #f7f9ff;
+  --app-text: #10203a;
+  --app-muted: #5f6b85;
+  --app-border: #d7e1ff;
+  --app-accent: #4f7cff;
+  --app-accent-strong: #315ee5;
+  --app-header-start: #4f7cff;
+  --app-header-end: #7f5af0;
+  --app-font-size: 16px;
+  --app-font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+body[data-app-mode='dark'] {
+  --app-bg: #070b14;
+  --app-surface: #0d1422;
+  --app-surface-alt: #111a2b;
+  --app-text: #f4f7fb;
+  --app-muted: #9aa7bc;
+  --app-border: #22304a;
+}
+
+html,
+body {
   height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: #f5f5f5;
+}
+
+body {
+  font-family: var(--app-font-family);
+  font-size: var(--app-font-size);
+  background: var(--app-bg);
+  color: var(--app-text);
+}
+
+body[data-app-mode='dark'] {
+  background: var(--app-surface);
+}
+
+body[data-app-mode='dark'] .app :where(h1, h2, h3, h4, h5, h6, p, span, small, strong, label, button, input, textarea, select, code, li, a) {
+  font-family: inherit !important;
+  font-size: inherit !important;
+}
+
+body[data-app-mode='dark'] .card,
+body[data-app-mode='dark'] .shops-view .shop-row,
+body[data-app-mode='dark'] .shops-view .dropzone,
+body[data-app-mode='dark'] .shops-view .detail-logo,
+body[data-app-mode='dark'] .shops-view .placeholder-row,
+body[data-app-mode='dark'] .receipts-view .receipt-item-summary,
+body[data-app-mode='dark'] .receipts-view .receipt-detail,
+body[data-app-mode='dark'] .settings-view,
+body[data-app-mode='dark'] .settings-view .theme-card,
+body[data-app-mode='dark'] .settings-view .mode-card,
+body[data-app-mode='dark'] .settings-view select,
+body[data-app-mode='dark'] .settings-view input,
+body[data-app-mode='dark'] .settings-view textarea {
+  background: var(--app-surface) !important;
+  color: var(--app-text) !important;
+  border-color: var(--app-border) !important;
+}
+
+body[data-app-mode='dark'] .tabs,
+body[data-app-mode='dark'] .tab-content,
+body[data-app-mode='dark'] .main-title,
+body[data-app-mode='dark'] .shops-view .sv-state,
+body[data-app-mode='dark'] .shops-view .detail-tabs,
+body[data-app-mode='dark'] .shops-view .section-toolbar,
+body[data-app-mode='dark'] .receipts-view .pagination,
+body[data-app-mode='dark'] .settings-view .section-head {
+  background: var(--app-surface-alt) !important;
+  color: var(--app-text) !important;
+}
+
+body[data-app-mode='dark'] button:not(.btn-ghost):not(.btn-back):not(.icon-btn) {
+  background: var(--app-accent) !important;
+  color: #08111f !important;
+}
+
+body[data-app-mode='dark'] button:hover:not(.btn-ghost):not(.btn-back):not(.icon-btn) {
+  background: var(--app-accent-strong) !important;
+}
+
+body[data-app-mode='dark'] .btn-ghost,
+body[data-app-mode='dark'] .btn-back,
+body[data-app-mode='dark'] .icon-btn,
+body[data-app-mode='dark'] .detail-tab,
+body[data-app-mode='dark'] .tabs button,
+body[data-app-mode='dark'] .settings-view .theme-card,
+body[data-app-mode='dark'] .settings-view .mode-card {
+  color: var(--app-text) !important;
+}
+
+body[data-app-mode='dark'] .error {
+  background: rgba(255, 91, 91, 0.14) !important;
+  color: #ff9c9c !important;
+}
+
+body[data-app-mode='dark'] .success {
+  background: rgba(78, 201, 141, 0.14) !important;
+  color: #9be7c0 !important;
 }
 
 #app {
   width: 100%;
   min-height: 100vh;
+  color: inherit;
 }
 
 dialog {

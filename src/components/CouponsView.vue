@@ -84,7 +84,7 @@ const onCouponSaved = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px 0;
+  padding: 0 0 10px 0;
   border-bottom: 1px solid var(--border, #e5e7eb);
 }
 
@@ -101,6 +101,8 @@ const onCouponSaved = () => {
   font-weight: 800;
   color: var(--text, #111827);
   letter-spacing: -0.02em;
+  background: none;
+  padding: 0;
 }
 
 /* ── Tabs ── */
@@ -142,7 +144,7 @@ const onCouponSaved = () => {
 .view-body {
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
+  padding: 15px 0;
 }
 
 /* ── Transition ── */
