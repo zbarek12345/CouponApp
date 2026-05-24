@@ -79,12 +79,12 @@ body[data-app-mode='dark'] .settings-view .section-head {
   color: var(--app-text) !important;
 }
 
-body[data-app-mode='dark'] button:not(.btn-ghost):not(.btn-back):not(.icon-btn) {
+body[data-app-mode='dark'] button:not(.btn-ghost):not(.btn-back):not(.icon-btn):not(.shop-row):not(.top-card):not(.item-row):not(.sv-tab):not(.dot):not(.tab-btn):not(.coupon-card):not(.shop-link):not(.cv-barcode-wrap):not(.cv-action-btn):not(.shop-chip) {
   background: var(--app-accent) !important;
   color: #08111f !important;
 }
 
-body[data-app-mode='dark'] button:hover:not(.btn-ghost):not(.btn-back):not(.icon-btn) {
+body[data-app-mode='dark'] button:hover:not(.btn-ghost):not(.btn-back):not(.icon-btn):not(.shop-row):not(.top-card):not(.item-row):not(.sv-tab):not(.dot):not(.tab-btn):not(.coupon-card):not(.shop-link):not(.cv-barcode-wrap):not(.cv-action-btn):not(.shop-chip) {
   background: var(--app-accent-strong) !important;
 }
 

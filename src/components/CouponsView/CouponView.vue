@@ -190,14 +190,14 @@ onMounted(loadCoupon)
   gap: 5px;
   background: none;
   border: none;
-  color: #666;
+  color: var(--app-muted);
   font-size: 14px;
   cursor: pointer;
   padding: 0 0 20px;
   font-weight: 500;
   transform: none;
 }
-.btn-back:hover { color: #111; background: none; transform: none; }
+.btn-back:hover { color: var(--app-text); background: none; transform: none; }
 
 /* ── State ── */
 .cv-state {
@@ -206,21 +206,21 @@ onMounted(loadCoupon)
   align-items: center;
   gap: 10px;
   padding: 60px 0;
-  color: #999;
+  color: var(--app-muted);
 }
 .cv-error {
   padding: 14px 16px;
-  background: #fff5f5;
-  border: 1px solid #fed7d7;
+  background: rgba(255, 91, 91, 0.14);
+  border: 1px solid rgba(255, 91, 91, 0.28);
   border-radius: 8px;
-  color: #c53030;
+  color: #d64242;
   font-size: 14px;
 }
 
 /* ── Hero ── */
 .cv-hero {
-  background: #fff;
-  border: 1px solid #e8e8e8;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
   border-radius: 14px;
   padding: 28px 24px 24px;
   display: flex;
@@ -235,7 +235,7 @@ onMounted(loadCoupon)
   height: 86px;
   border-radius: 8px;
   overflow: hidden;
-  background: #eef2ff;
+  background: color-mix(in srgb, var(--app-accent) 14%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -249,7 +249,7 @@ onMounted(loadCoupon)
 }
 
 .cv-shop-logo span {
-  color: #667eea;
+  color: var(--app-accent);
   font-size: 34px;
   font-weight: 800;
 }
@@ -263,7 +263,7 @@ onMounted(loadCoupon)
   min-height: 90px;
   padding: 12px;
   background: #fff;
-  border: 1px solid #e8e8e8;
+  border: 1px solid var(--app-border);
   border-radius: 8px;
   transform: none;
 }
@@ -287,7 +287,7 @@ onMounted(loadCoupon)
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  color: #bbb;
+  color: var(--app-muted);
   font-size: 13px;
 }
 
@@ -302,8 +302,8 @@ onMounted(loadCoupon)
 .cv-type-badge {
   display: inline-block;
   padding: 3px 10px;
-  background: #eef2ff;
-  color: #667eea;
+  background: color-mix(in srgb, var(--app-accent) 14%, transparent);
+  color: var(--app-accent);
   border-radius: 20px;
   font-size: 11px;
   font-weight: 700;
@@ -315,15 +315,15 @@ onMounted(loadCoupon)
   margin: 0;
   font-size: 20px;
   font-weight: 700;
-  color: #111;
-  letter-spacing: -0.02em;
+  color: var(--app-text);
+  letter-spacing: 0;
 }
 
 .cv-code-value {
   font-family: 'Courier New', monospace;
   font-size: 13px;
-  color: #667eea;
-  background: #f0f0ff;
+  color: var(--app-accent);
+  background: color-mix(in srgb, var(--app-accent) 12%, transparent);
   padding: 4px 12px;
   border-radius: 6px;
   word-break: break-all;
@@ -332,8 +332,8 @@ onMounted(loadCoupon)
 
 /* ── Meta card ── */
 .cv-meta-card {
-  background: #fff;
-  border: 1px solid #e8e8e8;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 14px;
@@ -351,24 +351,24 @@ onMounted(loadCoupon)
   cursor: pointer;
   transition: background 0.12s;
 }
-.cv-meta-row--shop:hover { background: #f8f8ff; }
+.cv-meta-row--shop:hover { background: var(--app-surface-alt); }
 
 .cv-meta-divider {
   height: 1px;
-  background: #f0f0f0;
+  background: var(--app-border);
   margin: 0 16px;
 }
 
 .cv-meta-label {
   font-size: 13px;
-  color: #888;
+  color: var(--app-muted);
   font-weight: 500;
   flex-shrink: 0;
 }
 
 .cv-meta-value {
   font-size: 13px;
-  color: #222;
+  color: var(--app-text);
   font-weight: 500;
   text-align: right;
   word-break: break-all;
@@ -376,14 +376,14 @@ onMounted(loadCoupon)
 .cv-meta-value.mono {
   font-family: 'Courier New', monospace;
   font-size: 11px;
-  color: #aaa;
+  color: var(--app-muted);
 }
 
 .cv-shop-link {
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #667eea;
+  color: var(--app-accent);
   font-weight: 600;
 }
 
@@ -400,10 +400,10 @@ onMounted(loadCoupon)
   justify-content: center;
   gap: 7px;
   padding: 11px 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--app-border);
   border-radius: 10px;
-  background: #fff;
-  color: #444;
+  background: var(--app-surface);
+  color: var(--app-text);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -411,9 +411,9 @@ onMounted(loadCoupon)
   transform: none;
 }
 .cv-action-btn:hover {
-  border-color: #667eea;
-  color: #667eea;
-  background: #f8f8ff;
+  border-color: var(--app-accent);
+  color: var(--app-accent);
+  background: var(--app-surface-alt);
   transform: none;
 }
 .cv-action-btn:disabled { opacity: 0.4; pointer-events: none; }
@@ -428,7 +428,7 @@ onMounted(loadCoupon)
   justify-content: center;
   gap: 18px;
   padding: 24px;
-  background: rgba(255,255,255,0.96);
+  background: color-mix(in srgb, var(--app-surface) 96%, transparent);
 }
 
 .expanded-code {
@@ -446,7 +446,7 @@ onMounted(loadCoupon)
 
 .code-overlay p {
   margin: 0;
-  color: #111;
+  color: var(--app-text);
   font-size: 18px;
   font-weight: 700;
   text-align: center;
@@ -458,7 +458,7 @@ onMounted(loadCoupon)
   100% { background-position:  500px 0; }
 }
 .shimmer {
-  background: linear-gradient(90deg, #f5f5f5 25%, #ebebeb 50%, #f5f5f5 75%);
+  background: linear-gradient(90deg, var(--app-surface-alt) 25%, var(--app-border) 50%, var(--app-surface-alt) 75%);
   background-size: 500px 100%;
   animation: shimmer 1.3s infinite linear;
 }
@@ -466,8 +466,8 @@ onMounted(loadCoupon)
 /* ── Spinner ── */
 .spinner {
   width: 28px; height: 28px;
-  border: 3px solid #eee;
-  border-top-color: #667eea;
+  border: 3px solid var(--app-border);
+  border-top-color: var(--app-accent);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }

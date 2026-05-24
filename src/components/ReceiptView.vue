@@ -96,15 +96,21 @@ onMounted(loadReceipt)
 .btn-back {
   width: fit-content;
   background: transparent;
-  color: #555;
-  border: 1px solid #ddd;
+  color: var(--app-muted);
+  border: 1px solid var(--app-border);
+  transform: none;
+}
+
+.btn-back:hover {
+  background: var(--app-surface-alt);
+  color: var(--app-text);
   transform: none;
 }
 
 .receipt-hero,
 .items-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
   border-radius: 8px;
   padding: 16px;
 }
@@ -122,8 +128,8 @@ onMounted(loadReceipt)
   flex-direction: column;
   gap: 2px;
   padding: 10px 12px;
-  background: #eef2ff;
-  color: #4f46e5;
+  background: color-mix(in srgb, var(--app-accent) 14%, transparent);
+  color: var(--app-accent);
   border: 0;
   border-radius: 8px;
   text-align: left;
@@ -131,7 +137,7 @@ onMounted(loadReceipt)
 }
 
 .shop-chip small {
-  color: #6366f1;
+  color: var(--app-accent);
   font-size: 11px;
 }
 
@@ -142,12 +148,12 @@ onMounted(loadReceipt)
 }
 
 .receipt-total span {
-  color: #777;
+  color: var(--app-muted);
   font-size: 12px;
 }
 
 .receipt-total strong {
-  color: #111;
+  color: var(--app-text);
   font-size: 30px;
 }
 
@@ -175,7 +181,7 @@ onMounted(loadReceipt)
 }
 
 .items-header span {
-  color: #777;
+  color: var(--app-muted);
   font-size: 13px;
 }
 
@@ -186,7 +192,7 @@ onMounted(loadReceipt)
 
 .item-row {
   padding: 12px 0;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--app-border);
 }
 
 .item-main {
@@ -197,7 +203,7 @@ onMounted(loadReceipt)
 }
 
 .item-main small {
-  color: #777;
+  color: var(--app-muted);
 }
 
 .item-row > span {
@@ -211,7 +217,7 @@ onMounted(loadReceipt)
   justify-content: center;
   gap: 10px;
   padding: 48px 0;
-  color: #777;
+  color: var(--app-muted);
 }
 
 .rv-state.compact {
@@ -220,17 +226,17 @@ onMounted(loadReceipt)
 
 .rv-error {
   padding: 14px 16px;
-  background: #fff5f5;
-  border: 1px solid #fed7d7;
+  background: rgba(255, 91, 91, 0.14);
+  border: 1px solid rgba(255, 91, 91, 0.28);
   border-radius: 8px;
-  color: #c53030;
+  color: #d64242;
 }
 
 .spinner {
   width: 26px;
   height: 26px;
-  border: 3px solid #eee;
-  border-top-color: #667eea;
+  border: 3px solid var(--app-border);
+  border-top-color: var(--app-accent);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }

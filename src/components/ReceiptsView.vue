@@ -41,12 +41,13 @@ const activeView = ref('list')
 
 .btn-ghost {
   background: transparent;
-  color: #555;
-  border: 1px solid #ddd;
+  color: var(--app-muted);
+  border: 1px solid var(--app-border);
 }
 
 .btn-ghost:hover {
-  background: #f5f5f5;
+  background: var(--app-surface-alt);
+  color: var(--app-text);
   transform: none;
 }
 </style>

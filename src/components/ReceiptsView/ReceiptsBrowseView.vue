@@ -75,15 +75,17 @@ onMounted(() => loadReceipts(0))
 }
 
 .receipt-item-summary {
-  border: 1px solid #eee;
+  border: 1px solid var(--app-border);
   margin-bottom: 10px;
   border-radius: 8px;
   overflow: hidden;
+  background: var(--app-surface);
 }
 
 .receipt-header {
   padding: 12px;
-  background: #f9f9f9;
+  background: var(--app-surface);
+  color: var(--app-text);
   cursor: pointer;
   display: flex;
   justify-content: space-between;
@@ -91,11 +93,11 @@ onMounted(() => loadReceipts(0))
 }
 
 .receipt-header:hover {
-  background: #f0f0f0;
+  background: var(--app-surface-alt);
 }
 
 .total {
   font-weight: bold;
-  color: #667eea;
+  color: var(--app-accent);
 }
 </style>

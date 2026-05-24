@@ -129,7 +129,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   padding-bottom: 14px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--app-border);
 }
 
 .page-info,
@@ -144,11 +144,12 @@ onMounted(async () => {
 }
 
 .page-total {
-  color: #9ca3af;
+  color: var(--app-muted);
 }
 
 .total-count {
-  background: #f3f4f6;
+  background: var(--app-surface-alt);
+  color: var(--app-muted);
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 11px;
@@ -159,9 +160,9 @@ onMounted(async () => {
   width: 32px;
   height: 32px;
   padding: 0;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  color: #374151;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface);
+  color: var(--app-text);
   border-radius: 7px;
   transform: none;
 }
@@ -173,7 +174,7 @@ onMounted(async () => {
   justify-content: center;
   gap: 10px;
   padding: 60px 20px;
-  color: #6b7280;
+  color: var(--app-muted);
   text-align: center;
 }
 
@@ -184,8 +185,8 @@ onMounted(async () => {
 .loader-ring {
   width: 40px;
   height: 40px;
-  border: 3px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border: 3px solid var(--app-border);
+  border-top-color: var(--app-accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -205,17 +206,17 @@ onMounted(async () => {
   grid-template-rows: 136px 1fr;
   padding: 0;
   overflow: hidden;
-  background: #fff;
-  color: inherit;
-  border: 1px solid #e5e7eb;
+  background: var(--app-surface);
+  color: var(--app-text);
+  border: 1px solid var(--app-border);
   border-radius: 8px;
   text-align: left;
   transform: none;
 }
 
 .coupon-card:hover {
-  background: #fff;
-  border-color: #6366f1;
+  background: var(--app-surface);
+  border-color: var(--app-accent);
   transform: none;
 }
 
@@ -223,7 +224,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f3f4f6;
+  background: var(--app-surface-alt);
 }
 
 .coupon-shop-art img {
@@ -239,8 +240,8 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: #eef2ff;
-  color: #6366f1;
+  background: color-mix(in srgb, var(--app-accent) 14%, transparent);
+  color: var(--app-accent);
   font-size: 32px;
   font-weight: 800;
 }
@@ -259,8 +260,8 @@ onMounted(async () => {
 }
 
 .type-pill {
-  background: #eef2ff;
-  color: #6366f1;
+  background: color-mix(in srgb, var(--app-accent) 14%, transparent);
+  color: var(--app-accent);
   padding: 2px 8px;
   border-radius: 20px;
   font-size: 10px;
@@ -269,13 +270,13 @@ onMounted(async () => {
 }
 
 .open-note {
-  color: #9ca3af;
+  color: var(--app-muted);
   font-size: 12px;
 }
 
 .coupon-content h3 {
   margin: 0;
-  color: #111827;
+  color: var(--app-text);
   font-size: 16px;
   line-height: 1.25;
 }
@@ -284,7 +285,7 @@ onMounted(async () => {
   width: fit-content;
   padding: 0;
   background: transparent;
-  color: #6366f1;
+  color: var(--app-accent);
   border: none;
   font-size: 13px;
   font-weight: 700;
@@ -299,7 +300,7 @@ onMounted(async () => {
 
 .coupon-code {
   margin: 0;
-  color: #9ca3af;
+  color: var(--app-muted);
   font-family: monospace;
   font-size: 12px;
   overflow: hidden;
@@ -307,7 +308,7 @@ onMounted(async () => {
 }
 
 .retry-btn {
-  background: #fff;
+  background: var(--app-surface);
   color: #dc2626;
   border: 1px solid #fca5a5;
 }

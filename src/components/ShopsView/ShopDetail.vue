@@ -264,14 +264,14 @@ onMounted(init)
   gap: 5px;
   background: none;
   border: none;
-  color: #666;
+  color: var(--app-muted);
   font-size: 14px;
   cursor: pointer;
   padding: 0 0 20px;
   font-weight: 500;
   transform: none;
 }
-.btn-back:hover { color: #111; background: none; transform: none; }
+.btn-back:hover { color: var(--app-text); background: none; transform: none; }
 
 /* ── States ── */
 .sv-state {
@@ -280,14 +280,14 @@ onMounted(init)
   align-items: center;
   gap: 10px;
   padding: 40px 0;
-  color: #999;
+  color: var(--app-muted);
 }
 .sv-error {
   padding: 14px 16px;
-  background: #fff5f5;
-  border: 1px solid #fed7d7;
+  background: rgba(255, 91, 91, 0.14);
+  border: 1px solid rgba(255, 91, 91, 0.28);
   border-radius: 8px;
-  color: #c53030;
+  color: #d64242;
   font-size: 14px;
   margin-bottom: 14px;
 }
@@ -297,7 +297,7 @@ onMounted(init)
   align-items: center;
   gap: 10px;
   padding: 40px 0;
-  color: #bbb;
+  color: var(--app-muted);
   font-size: 14px;
   text-align: center;
 }
@@ -315,8 +315,8 @@ onMounted(init)
   width: 68px; height: 68px;
   border-radius: 16px;
   overflow: hidden;
-  background: #f0f0ff;
-  border: 1px solid #e0e0ff;
+  background: color-mix(in srgb, var(--app-accent) 12%, var(--app-surface));
+  border: 1px solid var(--app-border);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
@@ -325,7 +325,7 @@ onMounted(init)
 .logo-initial {
   font-size: 28px;
   font-weight: 700;
-  color: #667eea;
+  color: var(--app-accent);
 }
 
 .sv-hero-info {
@@ -338,14 +338,14 @@ onMounted(init)
   margin: 0;
   font-size: 22px;
   font-weight: 800;
-  color: #111;
-  letter-spacing: -0.02em;
+  color: var(--app-text);
+  letter-spacing: 0;
 }
 
 .sv-id-badge {
   font-size: 11px;
-  color: #bbb;
-  background: #f5f5f5;
+  color: var(--app-muted);
+  background: var(--app-surface-alt);
   padding: 2px 8px;
   border-radius: 4px;
   font-family: monospace;
@@ -356,7 +356,7 @@ onMounted(init)
 .sv-tabs {
   display: flex;
   gap: 2px;
-  border-bottom: 2px solid #e8e8e8;
+  border-bottom: 2px solid var(--app-border);
   margin-bottom: 22px;
 }
 
@@ -371,17 +371,17 @@ onMounted(init)
   margin-bottom: -2px;
   font-size: 14px;
   font-weight: 600;
-  color: #888;
+  color: var(--app-muted);
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
   transform: none;
 }
-.sv-tab:hover { background: none; color: #444; transform: none; }
-.sv-tab.active { color: #667eea; border-bottom-color: #667eea; background: none; }
+.sv-tab:hover { background: none; color: var(--app-text); transform: none; }
+.sv-tab.active { color: var(--app-accent); border-bottom-color: var(--app-accent); background: none; }
 
 .tab-count {
-  background: #eef2ff;
-  color: #667eea;
+  background: color-mix(in srgb, var(--app-accent) 14%, transparent);
+  color: var(--app-accent);
   font-size: 11px;
   font-weight: 700;
   padding: 1px 7px;
@@ -404,20 +404,20 @@ onMounted(init)
   align-items: center;
   gap: 13px;
   padding: 12px 14px;
-  background: #fff;
-  border: 1px solid #e8e8e8;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
   border-radius: 10px;
   cursor: pointer;
   text-align: left;
   width: 100%;
-  color: inherit;
+  color: var(--app-text);
   transition: border-color 0.15s, box-shadow 0.15s;
   transform: none;
 }
 .item-row:hover {
-  border-color: #667eea;
+  border-color: var(--app-accent);
   box-shadow: 0 2px 8px rgba(102,126,234,0.1);
-  background: #fff;
+  background: var(--app-surface);
   transform: none;
 }
 
@@ -427,8 +427,8 @@ onMounted(init)
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.coupon-icon  { background: #eef2ff; color: #667eea; }
-.receipt-icon { background: #f0fdf4; color: #16a34a; }
+.coupon-icon  { background: color-mix(in srgb, var(--app-accent) 14%, transparent); color: var(--app-accent); }
+.receipt-icon { background: rgba(22, 163, 74, 0.13); color: #16a34a; }
 
 .item-info {
   flex: 1;
@@ -438,15 +438,15 @@ onMounted(init)
   overflow: hidden;
 }
 .item-info strong { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.item-info small  { font-size: 11px; color: #bbb; font-family: monospace; }
+.item-info small  { font-size: 11px; color: var(--app-muted); font-family: monospace; }
 
 .discount-note { color: #16a34a !important; font-family: inherit !important; font-size: 12px !important; }
 
 .item-badge {
   font-size: 11px;
   font-weight: 700;
-  background: #eef2ff;
-  color: #667eea;
+  background: color-mix(in srgb, var(--app-accent) 14%, transparent);
+  color: var(--app-accent);
   padding: 3px 9px;
   border-radius: 20px;
   flex-shrink: 0;
@@ -455,15 +455,15 @@ onMounted(init)
 .item-id-badge {
   font-family: monospace;
   font-size: 11px;
-  color: #bbb;
+  color: var(--app-muted);
   flex-shrink: 0;
 }
 
 .item-chevron {
-  color: #ccc;
+  color: var(--app-muted);
   flex-shrink: 0;
 }
-.item-row:hover .item-chevron { color: #667eea; }
+.item-row:hover .item-chevron { color: var(--app-accent); }
 
 /* ── Pagination ── */
 .sv-pagination {
@@ -476,26 +476,26 @@ onMounted(init)
 
 .pg-btn {
   padding: 7px 14px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--app-border);
   border-radius: 8px;
-  background: #fff;
-  color: #555;
+  background: var(--app-surface);
+  color: var(--app-muted);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
   transform: none;
 }
-.pg-btn:hover { border-color: #667eea; color: #667eea; transform: none; }
+.pg-btn:hover { border-color: var(--app-accent); color: var(--app-accent); transform: none; }
 .pg-btn:disabled { opacity: 0.35; pointer-events: none; }
 
-.pg-info { font-size: 13px; color: #888; }
+.pg-info { font-size: 13px; color: var(--app-muted); }
 
 /* ── Spinner ── */
 .spinner {
   width: 26px; height: 26px;
-  border: 3px solid #eee;
-  border-top-color: #667eea;
+  border: 3px solid var(--app-border);
+  border-top-color: var(--app-accent);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }

@@ -112,22 +112,22 @@ watch(
   align-items: center;
   justify-content: space-between;
   padding: 0 0 10px 0;
-  border-bottom: 1px solid var(--border, #e5e7eb);
+  border-bottom: 1px solid var(--app-border);
 }
 
 .view-title {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--accent, #6366f1);
+  color: var(--app-accent);
 }
 
 .view-title h1 {
   margin: 0;
   font-size: 20px;
   font-weight: 800;
-  color: var(--text, #111827);
-  letter-spacing: -0.02em;
+  color: var(--app-text);
+  letter-spacing: 0;
   background: none;
   padding: 0;
 }
@@ -150,21 +150,21 @@ watch(
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-muted, #9ca3af);
+  color: var(--app-muted);
   border-radius: 6px 6px 0 0;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
   margin-bottom: -1px; /* sit on the border */
 }
 
 .tab-btn:hover {
-  color: var(--text-secondary, #374151);
-  background: var(--bg, #f9fafb);
+  color: var(--app-text);
+  background: var(--app-surface-alt);
 }
 
 .tab-btn.active {
-  color: var(--accent, #6366f1);
-  border-bottom-color: var(--accent, #6366f1);
-  background: var(--bg, #f9fafb);
+  color: var(--app-accent);
+  border-bottom-color: var(--app-accent);
+  background: var(--app-surface-alt);
 }
 
 /* ── Body ── */
