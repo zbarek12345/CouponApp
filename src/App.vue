@@ -11,20 +11,28 @@
         v-for="tab in tabs"
         :key="tab.id"
         :class="{ active: activeTab === tab.id }"
-        @click="activeTab = tab.id"
+        @click="selectTab(tab.id)"
       >
         {{ tab.name }}
       </button>
     </div>
 
     <div class="tab-content">
-      <ShopsView v-if="activeTab === 'shops'" />
-      <CouponsView v-if="activeTab === 'coupons'" />
-      <ReceiptsView v-if="activeTab === 'receipts'" />
-      <SettingsView
-        v-if="activeTab === 'settings'"
-        :settings="settings"
-        @update-settings="updateSettings"
+      <ShopsView
+        v-if="activeTab === 'shops'"
+        :selected-shop-id="selectedShopId"
+        @go-to-coupon="goToCoupon"
+        @go-to-receipt="goToReceipt"
+      />
+      <CouponsView
+        v-if="activeTab === 'coupons'"
+        :selected-coupon-id="selectedCouponId"
+        @go-to-shop="goToShop"
+      />
+      <ReceiptsView
+        v-if="activeTab === 'receipts'"
+        :selected-receipt-id="selectedReceiptId"
+        @go-to-shop="goToShop"
       />
     </div>
   </div>
@@ -118,78 +126,39 @@ const loadSettings = () => {
 const settings = reactive(loadSettings())
 
 const activeTab = ref('shops')
+const selectedShopId = ref(null)
+const selectedCouponId = ref(null)
+const selectedReceiptId = ref(null)
 const tabs = [
   { id: 'shops', name: '🏪 Shops' },
   { id: 'coupons', name: '🎫 Coupons' },
-  { id: 'receipts', name: '🧾 Receipts' },
-  { id: 'settings', name: '⚙️ Settings' },
+  { id: 'receipts', name: '🧾 Receipts' }
 ]
 
-const updateSettings = (nextSettings) => {
-  Object.assign(settings, nextSettings)
+const selectTab = (tabId) => {
+  activeTab.value = tabId
+  if (tabId !== 'shops') selectedShopId.value = null
+  if (tabId !== 'coupons') selectedCouponId.value = null
+  if (tabId !== 'receipts') selectedReceiptId.value = null
 }
 
-const applySettings = () => {
-  const root = document.documentElement.style
-  const modePalette = modePresets[settings.mode] ?? modePresets.light
-  const palette = themePresets[settings.theme] ?? themePresets.ocean
-
-  document.body.dataset.appMode = settings.mode
-
-  root.setProperty('--app-bg', modePalette.bg)
-  root.setProperty('--app-surface', modePalette.surface)
-  root.setProperty('--app-surface-alt', modePalette.surfaceAlt)
-  root.setProperty('--app-text', modePalette.text)
-  root.setProperty('--app-muted', modePalette.muted)
-  root.setProperty('--app-border', modePalette.border)
-  root.setProperty('--app-accent', palette.accent)
-  root.setProperty('--app-accent-strong', palette.accentStrong)
-  root.setProperty('--app-header-start', palette.headerStart)
-  root.setProperty('--app-header-end', palette.headerEnd)
-  root.setProperty('--app-font-size', `${settings.fontSize}px`)
-  root.setProperty('--app-font-family', fontFamilies[settings.fontFamily] ?? fontFamilies.system)
+const goToShop = (shopId) => {
+  selectedShopId.value = shopId
+  selectedCouponId.value = null
+  selectedReceiptId.value = null
+  activeTab.value = 'shops'
 }
 
-watch(
-  settings,
-  () => {
-    localStorage.setItem(settingsStorageKey, JSON.stringify(settings))
-    applySettings()
-  },
-  { deep: true, immediate: true }
-)
-
-// --- Logika gestów Swipe ---
-const touchStartX = ref(0)
-const touchStartY = ref(0)
-const touchEndX = ref(0)
-const touchEndY = ref(0)
-
-const handleTouchStart = (e) => {
-  touchStartX.value = e.changedTouches[0].screenX
-  touchStartY.value = e.changedTouches[0].screenY
+const goToCoupon = (couponId) => {
+  selectedCouponId.value = couponId
+  selectedReceiptId.value = null
+  activeTab.value = 'coupons'
 }
 
-const handleTouchEnd = (e) => {
-  touchEndX.value = e.changedTouches[0].screenX
-  touchEndY.value = e.changedTouches[0].screenY
-  checkSwipe()
-}
-
-const checkSwipe = () => {
-  const xDiff = touchStartX.value - touchEndX.value
-  const yDiff = touchStartY.value - touchEndY.value
-  const threshold = 50
-
-  if (Math.abs(yDiff) > Math.abs(xDiff)) return
-
-  const currentIndex = tabs.findIndex((tab) => tab.id === activeTab.value)
-
-  if (xDiff > threshold) {
-    if (currentIndex < tabs.length - 1) activeTab.value = tabs[currentIndex + 1].id
-  } else if (xDiff < -threshold) {
-    if (currentIndex > 0) activeTab.value = tabs[currentIndex - 1].id
-  }
+const goToReceipt = (receiptId) => {
+  selectedReceiptId.value = receiptId
+  selectedCouponId.value = null
+  activeTab.value = 'receipts'
 }
 </script>
 

@@ -46,6 +46,7 @@ pub struct ReceiptEntry {
 #[derive(Debug, Serialize)]
 pub struct ReceiptPayload {
     pub receipt_id: String,
+    pub shop_id: String,
     pub shop_name: String,
     pub total_value: f64,
     pub total_discount: f64,
@@ -155,6 +156,17 @@ pub struct CouponView {
     pub description: String,
     pub shop_id: String,
     pub shop_name: String,
+    pub code_value: String,
+    pub code_type: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CouponDetailView {
+    pub coupon_id: String,
+    pub description: String,
+    pub shop_id: String,
+    pub shop_name: String,
+    pub shop_logo_base64: Option<String>,
     pub code_value: String,
     pub code_type: String,
 }

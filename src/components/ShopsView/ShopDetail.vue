@@ -1,320 +1,503 @@
 <template>
-  <div class="detail-view">
-    <button class="back-btn" @click="$emit('navigate', 'browser')">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-      All Shops
+  <div class="shop-view">
+
+    <!-- Back -->
+    <button class="btn-back" @click="$emit('back')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      {{ backLabel }}
     </button>
 
-    <!-- Shop Header -->
-    <div class="shop-header">
-      <div class="shop-avatar">
-        <img
-          v-if="shop.logo_base64"
-          :src="`data:image/png;base64,${shop.logo_base64}`"
-          :alt="shop.shop_name"
-        />
-        <span v-else class="avatar-fallback">{{ shop.shop_name.charAt(0).toUpperCase() }}</span>
-      </div>
-      <div class="shop-title">
-        <h1>{{ shop.shop_name }}</h1>
-        <code class="shop-id">{{ shop.shop_id }}</code>
-      </div>
+    <!-- Loading -->
+    <div v-if="loading" class="sv-state">
+      <div class="spinner"></div>
+      <span>Loading shop…</span>
     </div>
 
-    <!-- Tabs -->
-    <div class="tabs">
-      <button
-        v-for="tab in tabs"
-        :key="tab.id"
-        class="tab-btn"
-        :class="{ active: activeTab === tab.id }"
-        @click="activeTab = tab.id"
-      >
-        <component :is="tab.icon" />
-        {{ tab.label }}
-        <span class="tab-badge">{{ tab.count }}</span>
-      </button>
-    </div>
+    <div v-else-if="error" class="sv-error">{{ error }}</div>
 
-    <!-- Coupons Tab -->
-    <div v-if="activeTab === 'coupons'" class="tab-content">
-      <div class="tab-toolbar">
-        <h2>Coupons</h2>
-        <button class="btn-primary" disabled title="Coming soon">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add Coupon
-        </button>
-      </div>
+    <template v-else-if="shop">
 
-      <div class="placeholder-grid">
-        <div v-for="n in 3" :key="n" class="coupon-placeholder placeholder-shimmer">
-          <div class="coupon-ph-left">
-            <div class="ph-bar ph-bar--title"></div>
-            <div class="ph-bar ph-bar--subtitle"></div>
-          </div>
-          <div class="coupon-ph-right">
-            <div class="ph-chip"></div>
-          </div>
+      <!-- ── Hero ── -->
+      <div class="sv-hero">
+        <div class="sv-logo">
+          <img v-if="shop.logo_base64" :src="`data:image/png;base64,${shop.logo_base64}`" :alt="shop.shop_name" />
+          <span v-else class="logo-initial">{{ shop.shop_name.charAt(0).toUpperCase() }}</span>
+        </div>
+        <div class="sv-hero-info">
+          <h2 class="sv-name">{{ shop.shop_name }}</h2>
+          <code class="sv-id-badge">{{ shop.shop_id }}</code>
         </div>
       </div>
 
-      <div class="empty-notice">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-        <p>Coupon management coming soon.</p>
-      </div>
-    </div>
-
-    <!-- Receipts Tab -->
-    <div v-if="activeTab === 'receipts'" class="tab-content">
-      <div class="tab-toolbar">
-        <h2>Receipts</h2>
-        <button class="btn-primary" disabled title="Coming soon">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add Receipt
+      <!-- ── Tabs ── -->
+      <div class="sv-tabs">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          class="sv-tab"
+          :class="{ active: activeTab === tab.id }"
+          @click="activeTab = tab.id"
+        >
+          {{ tab.icon }} {{ tab.label }}
+          <span v-if="tab.id === 'coupons' && couponTotal !== null" class="tab-count">{{ couponTotal }}</span>
+          <span v-if="tab.id === 'receipts' && receiptTotal !== null" class="tab-count">{{ receiptTotal }}</span>
         </button>
       </div>
 
-      <div class="placeholder-grid">
-        <div v-for="n in 4" :key="n" class="receipt-placeholder placeholder-shimmer">
-          <div class="ph-bar ph-bar--date"></div>
-          <div class="ph-bar ph-bar--title"></div>
-          <div class="ph-bar ph-bar--amount"></div>
+      <!-- ── Coupons tab ── -->
+      <div v-if="activeTab === 'coupons'" class="sv-section">
+        <div v-if="couponsLoading" class="sv-state">
+          <div class="spinner"></div>
+        </div>
+        <div v-else-if="couponsError" class="sv-error">{{ couponsError }}</div>
+        <div v-else-if="coupons.length === 0" class="sv-empty">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+            <line x1="7" y1="7" x2="7.01" y2="7"/>
+          </svg>
+          <p>No coupons for this shop yet.</p>
+        </div>
+        <div v-else class="item-list">
+          <button
+            v-for="coupon in coupons"
+            :key="coupon.coupon_id"
+            class="item-row"
+            @click="$emit('go-to-coupon', coupon.coupon_id)"
+          >
+            <div class="item-icon coupon-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                <line x1="7" y1="7" x2="7.01" y2="7"/>
+              </svg>
+            </div>
+            <div class="item-info">
+              <strong>{{ coupon.description || 'Untitled Coupon' }}</strong>
+              <small>{{ coupon.code_value }}</small>
+            </div>
+            <span class="item-badge">{{ coupon.code_type }}</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="item-chevron">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Coupon pagination -->
+        <div v-if="couponTotal > couponLimit" class="sv-pagination">
+          <button class="pg-btn" @click="loadCoupons(couponOffset - couponLimit)" :disabled="couponOffset === 0">
+            ← Prev
+          </button>
+          <span class="pg-info">{{ couponOffset + 1 }}–{{ Math.min(couponOffset + couponLimit, couponTotal) }} of {{ couponTotal }}</span>
+          <button class="pg-btn" @click="loadCoupons(couponOffset + couponLimit)" :disabled="couponOffset + couponLimit >= couponTotal">
+            Next →
+          </button>
         </div>
       </div>
 
-      <div class="empty-notice">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        <p>Receipt tracking coming soon.</p>
+      <!-- ── Receipts tab ── -->
+      <div v-if="activeTab === 'receipts'" class="sv-section">
+        <div v-if="receiptsLoading" class="sv-state">
+          <div class="spinner"></div>
+        </div>
+        <div v-else-if="receiptsError" class="sv-error">{{ receiptsError }}</div>
+        <div v-else-if="receipts.length === 0" class="sv-empty">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <p>No receipts for this shop yet.</p>
+        </div>
+        <div v-else class="item-list">
+          <button
+            v-for="receipt in receipts"
+            :key="receipt.receipt_id"
+            class="item-row"
+            @click="$emit('go-to-receipt', receipt.receipt_id)"
+          >
+            <div class="item-icon receipt-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+            </div>
+            <div class="item-info">
+              <strong>${{ receipt.total_value.toFixed(2) }}</strong>
+              <small v-if="receipt.total_discount > 0" class="discount-note">
+                – ${{ receipt.total_discount.toFixed(2) }} discount
+              </small>
+            </div>
+            <code class="item-id-badge">{{ receipt.receipt_id.slice(0, 8) }}…</code>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="item-chevron">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Receipt pagination -->
+        <div v-if="receiptTotal > receiptLimit" class="sv-pagination">
+          <button class="pg-btn" @click="loadReceipts(receiptOffset - receiptLimit)" :disabled="receiptOffset === 0">
+            ← Prev
+          </button>
+          <span class="pg-info">{{ receiptOffset + 1 }}–{{ Math.min(receiptOffset + receiptLimit, receiptTotal) }} of {{ receiptTotal }}</span>
+          <button class="pg-btn" @click="loadReceipts(receiptOffset + receiptLimit)" :disabled="receiptOffset + receiptLimit >= receiptTotal">
+            Next →
+          </button>
+        </div>
       </div>
-    </div>
+
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
 
 const props = defineProps({
-  shop: {
-    type: Object,
-    required: true,
-  },
+  shopId:    { type: String, required: true },
+  backLabel: { type: String, default: 'All Shops' },
 })
 
-defineEmits(['navigate'])
+const emit = defineEmits(['back', 'go-to-coupon', 'go-to-receipt'])
 
+// ── Shop ──
+const shop    = ref(null)
+const loading = ref(false)
+const error   = ref(null)
+
+// ── Tabs ──
 const activeTab = ref('coupons')
-
 const tabs = [
-  { id: 'coupons', label: 'Coupons', count: 0 },
-  { id: 'receipts', label: 'Receipts', count: 0 },
+  { id: 'coupons',  icon: '🎫', label: 'Coupons'  },
+  { id: 'receipts', icon: '🧾', label: 'Receipts' },
 ]
+
+// ── Coupons ──
+const coupons       = ref([])
+const couponsLoading = ref(false)
+const couponsError  = ref(null)
+const couponOffset  = ref(0)
+const couponLimit   = 10
+const couponTotal   = ref(null)
+
+// ── Receipts ──
+const receipts       = ref([])
+const receiptsLoading = ref(false)
+const receiptsError  = ref(null)
+const receiptOffset  = ref(0)
+const receiptLimit   = 10
+const receiptTotal   = ref(null)
+
+// ── Loaders ──
+const loadShop = async () => {
+  loading.value = true
+  error.value   = null
+  try {
+    shop.value = await invoke('load_shop', { shopId: props.shopId })
+  } catch (e) {
+    error.value = String(e)
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadCoupons = async (offset = 0) => {
+  couponsLoading.value = true
+  couponsError.value   = null
+  try {
+    const result = await invoke('load_coupons_for_shop', {
+      shopId: props.shopId,
+      offset,
+      limit: couponLimit,
+    })
+    coupons.value      = result.items
+    couponOffset.value = result.offset
+    couponTotal.value  = result.total
+  } catch (e) {
+    couponsError.value = String(e)
+  } finally {
+    couponsLoading.value = false
+  }
+}
+
+const loadReceipts = async (offset = 0) => {
+  receiptsLoading.value = true
+  receiptsError.value   = null
+  try {
+    const result = await invoke('load_receipts_for_shop', {
+      shopId: props.shopId,
+      offset,
+      limit: receiptLimit,
+    })
+    receipts.value       = result.items
+    receiptOffset.value  = result.offset
+    receiptTotal.value   = result.total
+  } catch (e) {
+    receiptsError.value = String(e)
+  } finally {
+    receiptsLoading.value = false
+  }
+}
+
+const init = async () => {
+  await loadShop()
+  await Promise.all([loadCoupons(), loadReceipts()])
+}
+
+watch(() => props.shopId, init)
+onMounted(init)
 </script>
 
 <style scoped>
-.detail-view {
-  padding: 32px;
-  max-width: 900px;
-  margin: 0 auto;
+/* ── Layout ── */
+.shop-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.back-btn {
+/* ── Back ── */
+.btn-back {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   background: none;
   border: none;
   color: #666;
   font-size: 14px;
   cursor: pointer;
-  padding: 0;
-  margin-bottom: 28px;
-  transition: color 0.15s;
+  padding: 0 0 20px;
+  font-weight: 500;
+  transform: none;
 }
-.back-btn:hover { color: #111; }
+.btn-back:hover { color: #111; background: none; transform: none; }
 
-/* Shop header */
-.shop-header {
+/* ── States ── */
+.sv-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 0;
+  color: #999;
+}
+.sv-error {
+  padding: 14px 16px;
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 8px;
+  color: #c53030;
+  font-size: 14px;
+  margin-bottom: 14px;
+}
+.sv-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 0;
+  color: #bbb;
+  font-size: 14px;
+  text-align: center;
+}
+.sv-empty p { margin: 0; }
+
+/* ── Hero ── */
+.sv-hero {
   display: flex;
   align-items: center;
-  gap: 20px;
-  margin-bottom: 32px;
+  gap: 18px;
+  margin-bottom: 24px;
 }
 
-.shop-avatar {
-  width: 72px;
-  height: 72px;
+.sv-logo {
+  width: 68px; height: 68px;
   border-radius: 16px;
   overflow: hidden;
   background: #f0f0ff;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   border: 1px solid #e0e0ff;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
-.shop-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.avatar-fallback {
+.sv-logo img { width: 100%; height: 100%; object-fit: cover; }
+
+.logo-initial {
   font-size: 28px;
   font-weight: 700;
-  color: #4f46e5;
+  color: #667eea;
 }
 
-.shop-title h1 {
-  font-size: 26px;
-  font-weight: 700;
-  margin: 0 0 6px;
-  letter-spacing: -0.5px;
+.sv-hero-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-.shop-id {
+
+.sv-name {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #111;
+  letter-spacing: -0.02em;
+}
+
+.sv-id-badge {
   font-size: 11px;
   color: #bbb;
-  background: #f7f7f7;
-  padding: 3px 8px;
+  background: #f5f5f5;
+  padding: 2px 8px;
   border-radius: 4px;
   font-family: monospace;
+  align-self: flex-start;
 }
 
-/* Tabs */
-.tabs {
+/* ── Tabs ── */
+.sv-tabs {
   display: flex;
-  gap: 4px;
-  border-bottom: 2px solid #eee;
-  margin-bottom: 28px;
+  gap: 2px;
+  border-bottom: 2px solid #e8e8e8;
+  margin-bottom: 22px;
 }
 
-.tab-btn {
-  display: inline-flex;
+.sv-tab {
+  display: flex;
   align-items: center;
   gap: 7px;
-  padding: 10px 16px;
+  padding: 10px 18px;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: #888;
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
+  transform: none;
 }
-.tab-btn:hover { color: #333; }
-.tab-btn.active {
-  color: #4f46e5;
-  border-bottom-color: #4f46e5;
-}
+.sv-tab:hover { background: none; color: #444; transform: none; }
+.sv-tab.active { color: #667eea; border-bottom-color: #667eea; background: none; }
 
-.tab-badge {
-  background: #f0f0f0;
-  color: #888;
+.tab-count {
+  background: #eef2ff;
+  color: #667eea;
   font-size: 11px;
-  font-weight: 600;
-  padding: 1px 6px;
+  font-weight: 700;
+  padding: 1px 7px;
   border-radius: 10px;
 }
-.tab-btn.active .tab-badge {
-  background: #ede9fe;
-  color: #4f46e5;
+
+/* ── Section ── */
+.sv-section { }
+
+/* ── Item list ── */
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
-/* Tab toolbar */
-.tab-content { }
-.tab-toolbar {
+.item-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-.tab-toolbar h2 {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0;
-}
-
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: #4f46e5;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
+  gap: 13px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background 0.15s;
+  text-align: left;
+  width: 100%;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  transform: none;
 }
-.btn-primary:hover:not(:disabled) { background: #4338ca; }
-.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.item-row:hover {
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102,126,234,0.1);
+  background: #fff;
+  transform: none;
+}
 
-/* Placeholder shimmer */
-.placeholder-grid {
+.item-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.coupon-icon  { background: #eef2ff; color: #667eea; }
+.receipt-icon { background: #f0fdf4; color: #16a34a; }
+
+.item-info {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 28px;
+  gap: 2px;
+  overflow: hidden;
+}
+.item-info strong { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-info small  { font-size: 11px; color: #bbb; font-family: monospace; }
+
+.discount-note { color: #16a34a !important; font-family: inherit !important; font-size: 12px !important; }
+
+.item-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: #eef2ff;
+  color: #667eea;
+  padding: 3px 9px;
+  border-radius: 20px;
+  flex-shrink: 0;
 }
 
-@keyframes shimmer {
-  0% { background-position: -600px 0; }
-  100% { background-position: 600px 0; }
-}
-
-.placeholder-shimmer {
-  background: linear-gradient(90deg, #f5f5f5 25%, #ebebeb 50%, #f5f5f5 75%);
-  background-size: 600px 100%;
-  animation: shimmer 1.4s infinite linear;
-  border-radius: 10px;
-}
-
-/* Coupon placeholder */
-.coupon-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 20px;
-  border: 1px solid #eee;
-}
-.coupon-ph-left { display: flex; flex-direction: column; gap: 8px; flex: 1; }
-.coupon-ph-right { flex-shrink: 0; }
-
-/* Receipt placeholder */
-.receipt-placeholder {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  border: 1px solid #eee;
-}
-
-/* Placeholder bars */
-.ph-bar {
-  border-radius: 4px;
-  background: rgba(0,0,0,0.06);
-}
-.ph-bar--title { height: 14px; width: 160px; }
-.ph-bar--subtitle { height: 11px; width: 100px; }
-.ph-bar--date { height: 11px; width: 70px; }
-.ph-bar--amount { height: 14px; width: 60px; }
-
-.ph-chip {
-  width: 56px;
-  height: 24px;
-  border-radius: 12px;
-  background: rgba(0,0,0,0.06);
-}
-
-/* Empty notice */
-.empty-notice {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 32px;
+.item-id-badge {
+  font-family: monospace;
+  font-size: 11px;
   color: #bbb;
-  border: 2px dashed #eee;
-  border-radius: 12px;
-  text-align: center;
+  flex-shrink: 0;
 }
-.empty-notice p { margin: 0; font-size: 14px; color: #aaa; }
+
+.item-chevron {
+  color: #ccc;
+  flex-shrink: 0;
+}
+.item-row:hover .item-chevron { color: #667eea; }
+
+/* ── Pagination ── */
+.sv-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 8px 0 4px;
+}
+
+.pg-btn {
+  padding: 7px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fff;
+  color: #555;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  transform: none;
+}
+.pg-btn:hover { border-color: #667eea; color: #667eea; transform: none; }
+.pg-btn:disabled { opacity: 0.35; pointer-events: none; }
+
+.pg-info { font-size: 13px; color: #888; }
+
+/* ── Spinner ── */
+.spinner {
+  width: 26px; height: 26px;
+  border: 3px solid #eee;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
