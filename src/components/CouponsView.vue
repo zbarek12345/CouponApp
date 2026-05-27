@@ -171,7 +171,7 @@ watch(
 .view-body {
   flex: 1;
   overflow-y: auto;
-  padding: 15px 0;
+  padding: 15px;
 }
 
 /* ── Transition ── */
