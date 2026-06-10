@@ -241,6 +241,7 @@ body {
   color: var(--app-text);
   font-family: var(--app-font-family);
   font-size: var(--app-font-size);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .app :where(h1, h2, h3, h4, h5, h6, p, span, small, strong, label, button, input, textarea, select, code, li, a, option) {
@@ -359,6 +360,7 @@ body {
   display: flex;
   border-top: 2px solid var(--app-border);
   background: var(--app-surface-alt);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .tabs button {
@@ -387,6 +389,7 @@ body {
   padding: 20px;
   flex: 1;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .app :where(h1, h2, h3, h4, h5, h6, p, span, small, strong, label, button, input, textarea, select, code, li, a) {

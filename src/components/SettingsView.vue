@@ -168,6 +168,9 @@ const setFontSize = (fontSize) => {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 20px;
 }
 
 .settings-hero {
@@ -339,6 +342,10 @@ input[type='range'] {
     width: 100%;
     height: 14px;
     border-radius: 999px;
+  }
+
+  .settings-view {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
   }
 }
 </style>
