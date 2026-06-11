@@ -1,54 +1,10 @@
-# Raport projektu: aplikacja mobilna do zbierania kuponów i skanowania kodów QR
+# Raport projektu: Aplikacja mobilna do zbierania kuponów i skanowania kodów QR
 
+## 1. Wprowadzenie i cel
 
-
-## 1. Wprowadzenie
-
-
-
-Projekt dotyczy aplikacji mobilnej zbudowanej przy użyciu **Tauri** oraz **Vue.js**, której głównym celem jest ułatwienie użytkownikom zbierania, organizowania i szybkiego odnajdywania kuponów promocyjnych. Aplikacja pozwala również na skanowanie kodów QR, dodawanie sklepów oraz zarządzanie kuponami w sposób wygodny i uporządkowany.
-
-
+Projekt dotyczy aplikacji mobilnej i desktopowej zbudowanej przy użyciu **Tauri** oraz **Vue.js**, której głównym celem jest ułatwienie użytkownikom zbierania, organizowania i szybkiego odnajdywania kuponów promocyjnych. Aplikacja pozwala również na skanowanie kodów QR, dodawanie sklepów oraz zarządzanie paragonami w sposób wygodny i uporządkowany.
 
 Rozwiązanie zostało zaprojektowane z myślą o użytkownikach, którzy często korzystają z promocji, kart lojalnościowych lub kuponów rabatowych i chcą mieć do nich szybki dostęp w jednym miejscu.
-
-
-
----
-
-
-
-## 2. Technologie wykorzystane w projekcie
-
-
-
-Aplikacja została wykonana w oparciu o następujące technologie:
-
-
-
-| Technologia                          | Zastosowanie                                                        |
-| ------------------------------------ | ------------------------------------------------------------------- |
-| **Tauri**                            | Warstwa aplikacyjna, integracja z systemem oraz budowanie aplikacji |
-| **Rust**                             | Logika backendowa aplikacji oraz obsługa funkcji natywnych          |
-| **Vue.js**                           | Interfejs użytkownika                                               |
-| **JavaScript / TypeScript**          | Logika po stronie frontendu                                         |
-| **HTML / CSS**                       | Struktura i stylizacja widoków                                      |
-| **QR Scanner**                       | Obsługa skanowania kodów QR                                         |
-| **Moduł OCR / skanowania paragonów** | Rozpoznawanie danych z paragonów, dostępne wyłącznie na komputerze  |
-
-
-
-Całość aplikacji opiera się na ekosystemie **Tauri**, dlatego część natywna projektu została przygotowana w języku **Rust**. Pozwala to uzyskać dobrą wydajność, niski narzut zasobów oraz większą kontrolę nad działaniem aplikacji.
-
-
-
----
-
-
-
-## 3. Cel aplikacji
-
-
 
 Głównym celem aplikacji jest maksymalne skrócenie czasu potrzebnego na odnalezienie odpowiedniego kuponu podczas zakupów. Użytkownik może przechowywać kupony w jednym miejscu, przypisywać je do konkretnych sklepów oraz szybko wyszukiwać interesujące promocje.
 
@@ -60,13 +16,65 @@ Aplikacja rozwiązuje problem rozproszenia kuponów pomiędzy różnymi aplikacj
 
 ---
 
+---
+
+## 2. Zawartość aplikacji (Kategorie i produkty)
+
+Zgodnie z założeniami projektu multimedialnego, zawartość aplikacji opiera się na kategoryzacji treści. Naszymi "produktami" wewnątrz aplikacji są zdefiniowane elementy bazy danych, które użytkownik przegląda i z którymi wchodzi w interakcję. Podzieliliśmy je na 3 główne kategorie, z których każda zawiera po co najmniej 4 elementy (łącznie 12 "produktów"):
+
+1. **Kategoria: Sklepy (Shops)** – miejsca, do których przypisujemy promocje:
+   * Sklepik osiedlowy (z własnym logo i bazą kuponów)
+   * Tesco (hipermarket)
+   * Żabka (sklep typu convenience)
+   * Biedronka (dyskont)
+2. **Kategoria: Kupony (Coupons)** – konkretne oferty rabatowe:
+   * Kupon -20% na napoje gazowane
+   * Promocja 2+1 gratis na przekąski
+   * Jednorazowy rabat 50 PLN na elektronikę
+   * Zniżka lojalnościowa dla stałych klientów
+3. **Kategoria: Paragony (Receipts)** – cyfrowe dowody zakupu:
+   * Paragon z codziennych zakupów spożywczych (z pozycjami z OCR)
+   * Paragon za sprzęt AGD (ważny do gwarancji)
+   * Faktura za usługi
+   * Szybki bilet/paragon z kasy fiskalnej
+
+---
+
+## 3. Technologie wykorzystane w projekcie
+
+Aplikacja została wykonana w oparciu o następujące technologie:
+
+| Technologia | Zastosowanie |
+| --- | --- |
+| **Tauri** | Warstwa aplikacyjna, integracja z systemem oraz budowanie aplikacji |
+| **Rust** | Logika backendowa (baza SQLite) oraz obsługa funkcji natywnych |
+| **Vue.js 3** | Interfejs użytkownika (Composition API) |
+| **JavaScript / CSS** | Logika po stronie frontendu, style i animacje |
+| **QR Scanner (rxing)** | Obsługa skanowania i generowania kodów QR/kreskowych po stronie Rusta |
+| **Moduł skanowania paragonów** | Rozpoznawanie danych z paragonów (tekst i kwoty) |
+
+Całość opiera się na ekosystemie **Tauri**, dzięki czemu część natywna (Rust) zapewnia świetną wydajność i niskie zużycie zasobów.
+
+---
+
+## 4. Wymagania funkcjonalne i niefunkcjonalne
+
+**Wymagania funkcjonalne:**
+* **Zarządzanie treścią:** Możliwość dodawania i przeglądania sklepów, kuponów oraz skanowania paragonów.
+* **Skanowanie kodów:** Aplikacja potrafi odczytać kod ze zdjęcia i wygenerować go zwrotnie na ekranie telefonu, by można go było pokazać przy kasie.
+* **Personalizacja (customizacja):** Wbudowaliśmy panel ustawień, który pozwala na żywo zmieniać wygląd aplikacji. Użytkownik może wybrać tryb (Jasny/Ciemny), motyw kolorystyczny (Ocean, Ember, Forest, Graphite) oraz dostosować krój i rozmiar czcionki.
+
+**Wymagania niefunkcjonalne:**
+* **Responsywność:** Interfejs automatycznie dostosowuje się do rozmiaru i orientacji ekranu. Użyliśmy do tego CSS Grid. Na smartfonach pasek nawigacji jest na dole (by nie zasłaniał elementów systemowych), a na szerszych ekranach komputerów przeskakuje na lewą stronę jako boczny panel.
+* **Wydajność:** Dane trzymane są lokalnie na urządzeniu (baza SQLite), co gwarantuje natychmiastowe ładowanie list bez czekania na serwer.
+
+---
+
+## 5. Główne funkcje aplikacji
 
 
-## 4. Główne funkcje aplikacji
 
-
-
-### 4.1. Zbieranie kuponów
+### 5.1. Zbieranie kuponów
 
 
 
@@ -98,7 +106,7 @@ Dzięki temu użytkownik może szybko sprawdzić, jakie kupony posiada i które 
 
 
 
-### 4.2. Skanowanie kodów QR
+### 5.2. Skanowanie kodów QR
 
 
 
@@ -124,7 +132,7 @@ Skanowanie kodów QR znacząco przyspiesza korzystanie z aplikacji, ponieważ u�
 
 
 
-### 4.3. Dodawanie sklepów
+### 5.3. Dodawanie sklepów
 
 
 
@@ -156,7 +164,7 @@ Przykładowe dane sklepu:
 
 
 
-### 4.4. Szybkie wyszukiwanie kuponów
+### 5.4. Szybkie wyszukiwanie kuponów
 
 
 
@@ -172,7 +180,7 @@ Funkcja ta jest szczególnie przydatna podczas zakupów, gdy liczy się czas i w
 
 
 
-### 4.5. Moduł skanowania paragonów
+### 5.5. Moduł skanowania paragonów
 
 
 
@@ -189,10 +197,24 @@ Mimo tego moduł stanowi ważny element projektu, ponieważ pokazuje możliwoś�
 
 
 ---
+## 6. Typografia, Formaty i UI/UX
+
+Projekt graficzny i techniczny został przemyślany tak, aby był maksymalnie czytelny i lekki:
+
+* **Typografia:** Zamiast ładować ciężkie, zewnętrzne pliki z czcionkami (co obciążałoby aplikację i rodziło problemy licencyjne), użyliśmy czcionek systemowych. W kodzie zdefiniowaliśmy zmiennes CSS oferujące cztery warianty typograficzne: systemowe (np. `Inter`, `Segoe UI`), zaokrąglone (`Trebuchet MS`), szeryfowe (`Georgia`) oraz stałoszerokościowe (`monospace`).
+* **Formaty plików:** * Do zapisywania logotypów sklepów postawiliśmy na format **PNG** (zapisywany jako Base64 w Rust). Jest to bezstratny format, co jest kluczowe, by grafiki i kody QR nie traciły na ostrości.
+  * Ikony w samej aplikacji to wyłącznie format **SVG**, co gwarantuje, że nie "rozpikselują" się na ekranach o wysokiej rozdzielzzości (np. Retina).
+* **Zasady UI/UX:** Zastosowaliśmy widok kart, który świetnie separuje poszczególne kupony. Zaimplementowaliśmy też obsługę gestów – zakładki (Sklepy/Kupony/Paragony) można przełączać po prostu "smyrając" palcem po ekranie w lewo lub prawo (wykorzystaliśmy do tego zdarzenia `touchstart` i `touchend` w JavaScript).
+
+### 5.1. Autorskie animacje
+Zgodnie z wymaganiami, nie oparliśmy się wyłącznie na systemowych przejściach. W kodzie CSS zaprogramowaliśmy kilka własnych animacji:
+* **Przycisk ustawień (Zębatka):** Posiada customową animację. Po kliknięciu lub najechaniu płynnie zmienia dwa parametry: rotację (obraca się o 20 stopni) oraz skalę (zmniejsza się do 95%), co daje fajny efekt wciśnięcia fizycznego przycisku.
+* **Zakładki (`tab-slide`):** Przejścia między głównymi ekranami są animowane za pomocą Vue transitions – łączą one zmianę przezroczystości (`opacity`) z lekkim przesunięciem na osi X (`transform: translateX`), co upłynnia nawigację.
+
+---
 
 
-
-## 5. Architektura aplikacji
+## 7. Architektura aplikacji
 
 
 
@@ -214,7 +236,7 @@ System / pliki / kamera / moduły natywne
 
 
 
-### 5.1. Frontend
+### 7.1. Frontend
 
 
 
@@ -240,7 +262,7 @@ Vue.js pozwala na budowanie dynamicznych komponentów, dzięki czemu interfejs a
 
 
 
-### 5.2. Backend
+### 7.2. Backend
 
 
 
@@ -270,20 +292,25 @@ Rust zapewnia wysoką wydajność oraz bezpieczeństwo pamięci, co jest istotne
 
 
 
-## 6. Formularz projektu
+## 8. Formularz projektu (Materiały Wizualne)
 
 
 
 Poniżej znajduje się miejsce na materiały wizualne, mockupy oraz zdjęcia właściwego projektu.
-### 6.1. Ulotka informacyjna projektu
+
+### 8.1. Ulotka informacyjna projektu
 Poniżej przedstawiono ulotkę informacyjną projektu.
 
 ![Ulotka projektu](ulotka_projektu.png)
 
+### 8.2 Logo projektu
+
+Poniżej przedstawiono logo projektu.
+![Logo projektu](logo_projektu.jpg)
 
 
 
-### 6.2. Szablon aplikacji (wireframe)
+### 8.3. Szablon aplikacji (wireframe)
 
 
 | Widok sklepów | Widok kuponów |
@@ -298,7 +325,7 @@ Poniżej przedstawiono ulotkę informacyjną projektu.
 
 
 
-### 6.3. Makieta (mockup) aplikacji
+### 8.4 Makieta (mockup) aplikacji
 
 | Widok sklepów | Widok kuponów |
 | --- | --- |
@@ -313,65 +340,34 @@ Poniżej przedstawiono ulotkę informacyjną projektu.
 ---
 
 
-
-### 6.4. Zdjęcia właściwego projektu
-
-
-
-> **Miejsce na zdjęcia gotowego projektu**
+## 9. Przykładowe widoki aplikacji
 
 
 
-![Ekran główny aplikacji](ścieżka/do/zdjecia-1.png)
+### 9.1. Ustawienia
 
 
 
-![Widok listy kuponów](ścieżka/do/zdjecia-2.png)
+Ustawienia pozwalają zmieniać niektóre cechy wyglądu aplikacji, takie jak:
 
 
+* Tryb jasny/ciemny,
 
-![Widok skanowania kodu QR](ścieżka/do/zdjecia-3.png)
+* Kolor motywu,
 
+* Czcionka,
 
+* Rozmiar czcionki.
 
-![Widok dodawania sklepu](ścieżka/do/zdjecia-4.png)
-
-
-Opis zdjęć:
-
-
+| Widok ustawień - motywy| Widok ustawień - czcionka |
+| --- | --- |
+| ![Widok ustawien](Screenshot_2026-06-11-18-47-41-233_com.couponapp.desktop.jpg) | ![Widok ustawien2](Screenshot_2026-06-11-18-47-43-359_com.couponapp.desktop.jpg) |
 
 
 ---
 
 
-
-## 7. Przykładowe widoki aplikacji
-
-
-
-### 7.1. Ekran główny
-
-
-
-Ekran główny może zawierać listę najważniejszych funkcji aplikacji, takich jak:
-
-
-
-* lista ostatnio dodanych kuponów,
-
-* szybki dostęp do skanera QR,
-
-* przycisk dodawania nowego kuponu,
-
-* sekcja popularnych lub ostatnio używanych sklepów.
-
-
-
----
-
-
-### 7.2. Widok kuponów
+### 9.2. Widok kuponów
 
 
 
@@ -394,14 +390,14 @@ Kod: PROMO20
 Ważny do: 31.12.2026
 
 ```
-
+![Widok kuponow](Screenshot_2026-06-11-18-47-13-008_com.couponapp.desktop.jpg)
 
 
 ---
 
 
 
-### 7.3. Widok sklepów
+### 9.3. Widok sklepów
 
 
 
@@ -415,9 +411,9 @@ Dzięki temu aplikacja ogranicza czas potrzebny na znalezienie odpowiedniego kup
 
 ---
 
+![Widok sklepow](Screenshot_2026-06-11-18-46-54-949_com.couponapp.desktop.jpg)
 
-
-### 7.4. Widok skanera QR
+### 9.4. Widok skanera QR
 
 
 
@@ -429,7 +425,7 @@ Widok skanera QR służy do szybkiego odczytywania kodów. Po zeskanowaniu kodu 
 
 
 
-## 8. Zalety zastosowanego rozwiązania
+## 10. Zalety zastosowanego rozwiązania
 
 
 
@@ -459,7 +455,7 @@ Najważniejsze zalety aplikacji:
 
 
 
-## 9. Ograniczenia projektu
+## 11. Ograniczenia projektu
 
 
 
@@ -483,7 +479,7 @@ Projekt posiada również kilka ograniczeń:
 
 
 
-## 10. Możliwości dalszego rozwoju
+## 12. Możliwości dalszego rozwoju
 
 
 
@@ -513,7 +509,7 @@ W przyszłości aplikację można rozbudować o dodatkowe funkcje, takie jak:
 
 
 
-## 11. Podsumowanie
+## 13. Podsumowanie
 
 
 
